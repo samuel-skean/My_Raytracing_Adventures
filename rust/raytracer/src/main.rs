@@ -33,7 +33,7 @@ fn ray_color(r: &Ray) -> Color {
 
     if t > 0.0 {
         let n = (r.at(t) - sphere_center).normalized(); // The normal of the intersection.
-        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0)
+        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
             // Mapping the components of the normal, which have the range -1.0
             // to 1.0 as normalized vectors, to the range 0 to 1.0
 
