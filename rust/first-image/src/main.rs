@@ -22,6 +22,10 @@ fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> bool {
 // Basically, the x stole from the y when it was pointing left and pointing
 // right. This is why the image is pretty :).
 fn ray_color(r: &Ray) -> Color {
+    if hit_sphere(Point3::new(0.0, 0.0, -0.5), 0.20, r) {
+        return Color::new(0.0, 1.0, 0.0)
+    }
+
     if hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r) {
         return Color::new(1.0, 0.0, 0.0)
     }
