@@ -1,8 +1,8 @@
 fn main() {
     // Image:
 
-    const IMAGE_WIDTH: u64 = 256;
-    const IMAGE_HEIGHT: u64 = 256;
+    const IMAGE_WIDTH: u16 = 256;
+    const IMAGE_HEIGHT: u16 = 256;
 
 
     // Header:
@@ -17,9 +17,9 @@ fn main() {
             let g = (j as f64) / ((IMAGE_HEIGHT - 1) as f64);
             let b = 0.25;
 
-            let ir = (255.999 * r) as u64;
-            let ig = (255.999 * g) as u64;
-            let ib = (255.999 * b) as u64;
+            let ir = (255.999 * r) as u8;
+            let ig = (255.999 * g) as u8;
+            let ib = (255.999 * b) as u8;
             print!("{ir} {ig} {ib} ");
         }
         println!();
