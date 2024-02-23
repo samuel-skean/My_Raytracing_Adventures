@@ -6,7 +6,12 @@ use std::io::{stderr, Write};
 use vec::{Vec3, Point3, Color};
 use ray::Ray;
 
-// Gets a color from each ray that forms a gradient when put together in the viewport.
+// Gets a color from each ray that forms a gradient when put together in the
+// viewport.
+// Because the ray is normalized first, there is a slight horizontal gradient
+// from light blue on the left, through white, and to light blue on the right.
+// Basically, the x stole from the y when it was pointing left and pointing
+// right. This is why the image is pretty :).
 fn ray_color(r: &Ray) -> Color {
     let unit_direction = r.direction().normalized();
     let t = 0.5 * (unit_direction.y() + 1.0);
