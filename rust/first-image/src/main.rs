@@ -6,6 +6,15 @@ use std::io::{stderr, Write};
 use vec::{Vec3, Point3, Color};
 use ray::Ray;
 
+fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> bool {
+    let oc = r.origin() - center; // A - C
+    let a = r.direction().dot(r.direction()); // b . b
+    let b = 2.0 * oc.dot(r.direction()); // 2b
+    let c = oc.dot(oc) - radius * radius; // (A - C) . (A - C) * r^2
+    let discriminant = b * b - 4.0 * a * c;
+    discriminant > 0.0 // there are any roots
+}
+
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
 // Because the ray is normalized first, there is a slight horizontal gradient
@@ -13,6 +22,10 @@ use ray::Ray;
 // Basically, the x stole from the y when it was pointing left and pointing
 // right. This is why the image is pretty :).
 fn ray_color(r: &Ray) -> Color {
+    if hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r) {
+        return Color::new(1.0, 0.0, 0.0)
+    }
+
     let unit_direction = r.direction().normalized();
     let t = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
