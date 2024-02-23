@@ -177,3 +177,15 @@ impl Vec3 {
         self / self.length()
     }
 }
+
+// Color specific utility functions:
+
+impl Vec3 {
+    pub fn format_color(self) -> String {
+        format!(
+            "{} {} {}", (255.999 * self[0]) as u64,
+                        (255.999 * self[1]) as u64,
+                        (255.999 * self[2]) as u64,
+        )
+    }
+}
