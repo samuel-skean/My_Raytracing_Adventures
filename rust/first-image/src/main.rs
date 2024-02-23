@@ -6,15 +6,21 @@ use std::io::{stderr, Write};
 use vec::{Vec3, Point3, Color};
 use ray::Ray;
 
-fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> bool {
+fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
     let oc = r.origin() - center; // A - C
     let a = r.direction().dot(r.direction()); // b . b
     let b = 2.0 * oc.dot(r.direction()); // 2b
     let c = oc.dot(oc) - radius * radius; // (A - C) . (A - C) * r^2
     let discriminant = b * b - 4.0 * a * c;
-    discriminant > 0.0 // there are any roots
-}
 
+    if discriminant < 0.0  {// there are no roots
+        -1.0
+    } else {
+        (-b - discriminant.sqrt()) / (2.0 * a)
+            // the smaller of the two roots (smaller t, so 'closer' to the
+            // camera - assuming nothing's behind us)
+    }
+}
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
 // Because the ray is normalized first, there is a slight horizontal gradient
@@ -22,8 +28,15 @@ fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> bool {
 // Basically, the x stole from the y when it was pointing left and pointing
 // right. This is why the image is pretty :).
 fn ray_color(r: &Ray) -> Color {
-    if hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r) {
-        return Color::new(1.0, 0.0, 0.0)
+    let sphere_center = Point3::new(0.0, 0.0, -1.0);
+    let t = hit_sphere(sphere_center, 0.5, r);
+
+    if t > 0.0 {
+        let n = (r.at(t) - sphere_center).normalized(); // The normal of the intersection.
+        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0)
+            // Mapping the components of the normal, which have the range -1.0
+            // to 1.0 as normalized vectors, to the range 0 to 1.0
+
     }
 
     let unit_direction = r.direction().normalized();
