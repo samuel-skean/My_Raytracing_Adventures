@@ -9,7 +9,7 @@ use ray::Ray;
 fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
     let oc = r.origin() - center; // A - C
     let a = r.direction().length().powi(2); // b . b
-    let half_b = oc.dot(r.direction()); // b * (A - C)
+    let half_b = oc.dot(r.direction()); // b . (A - C)
     let c = oc.length().powi(2) - radius * radius; // (A - C) . (A - C) * r^2
     let quarter_discriminant = half_b * half_b - a * c;
 
