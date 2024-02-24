@@ -17,7 +17,7 @@ impl HitRecord {
         let front_face = r.direction().dot(outward_normal) > 0.0;
         HitRecord {
             p,
-            normal: if front_face  { outward_normal } else { -1.0 * outward_normal },
+            normal: if front_face { outward_normal } else { -1.0 * outward_normal },
             t,
             front_face
         }
