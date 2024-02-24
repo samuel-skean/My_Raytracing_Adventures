@@ -1,5 +1,7 @@
 mod vec;
 mod ray;
+mod hit;
+mod sphere;
 
 use std::io::{stderr, Write};
 
