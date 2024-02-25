@@ -14,7 +14,7 @@ impl HitRecord {
     // And this way, I can have correctly initialized HitRecords without
     // necessarily making them mutable.
     pub fn with_normal_against_ray(p: Point3, t: f64, r: &Ray, outward_normal: Vec3) -> HitRecord {
-        let front_face = r.direction().dot(outward_normal) > 0.0;
+        let front_face = r.direction().dot(outward_normal) < 0.0;
         HitRecord {
             p,
             normal: if front_face { outward_normal } else { -1.0 * outward_normal },
