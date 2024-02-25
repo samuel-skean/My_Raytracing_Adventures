@@ -5,6 +5,7 @@ mod sphere;
 mod camera;
 
 use std::io::{stderr, Write};
+use rand::Rng;
 
 use vec::{Vec3, Point3, Color};
 use ray::Ray;
@@ -36,6 +37,7 @@ fn main() {
     const ASPECT_RATIO: f64 = 16.0 / 9.0;
     const IMAGE_WIDTH: u64 = 256;
     const IMAGE_HEIGHT: u64 = ((IMAGE_WIDTH as f64) / ASPECT_RATIO) as u64;
+    const SAMPLES_PER_PIXEL: u64 = 100;
 
     // World
     let mut world = World::new();
@@ -56,14 +58,23 @@ fn main() {
         eprint!("\rScanlines remaining: {:3}", j + 1);
         stderr().flush().unwrap();
 
+        let mut rng = rand::thread_rng();
         for i in 0..IMAGE_WIDTH {
-            let u = (i as f64) / ((IMAGE_WIDTH - 1) as f64);
-            let v = (j as f64) / ((IMAGE_HEIGHT - 1) as f64);
+            let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
+            for _ in 0..SAMPLES_PER_PIXEL {
+                let random_u_component: f64 = rng.gen();
+                let random_v_component: f64 = rng.gen();
 
-            let r = cam.get_ray(u, v);
-            let pixel_color = ray_color(&r, &world);
+                let u =
+                    ((i as f64) + random_u_component) / ((IMAGE_WIDTH - 1) as f64);
+                let v =
+                    ((j as f64) + random_v_component) / ((IMAGE_HEIGHT - 1) as f64);
 
-            print!("{} ", pixel_color.format_color());
+                let r = cam.get_ray(u, v);
+                pixel_color += ray_color(&r, &world);
+            }
+
+            print!("{} ", pixel_color.format_color(SAMPLES_PER_PIXEL));
         }
         println!();
     }
