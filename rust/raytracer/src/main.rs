@@ -55,7 +55,7 @@ fn main() {
     println!("255");
 
     for j in (0..IMAGE_HEIGHT).rev() {
-        eprint!("\rScanlines remaining: {:3}", j + 1);
+        eprint!("\rScanlines remaining: {:4}", j + 1);
         stderr().flush().unwrap();
 
         let mut rng = ChaCha8Rng::seed_from_u64(0);
