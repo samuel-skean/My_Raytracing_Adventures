@@ -5,7 +5,8 @@ mod sphere;
 mod camera;
 
 use std::io::{stderr, Write};
-use rand::Rng;
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
 use vec::{Vec3, Point3, Color};
 use ray::Ray;
@@ -58,7 +59,7 @@ fn main() {
         eprint!("\rScanlines remaining: {:3}", j + 1);
         stderr().flush().unwrap();
 
-        let mut rng = rand::thread_rng();
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
         for i in 0..IMAGE_WIDTH {
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
             for _ in 0..SAMPLES_PER_PIXEL {
