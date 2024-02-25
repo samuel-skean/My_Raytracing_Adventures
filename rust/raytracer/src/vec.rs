@@ -200,9 +200,9 @@ impl Vec3 {
     pub fn format_color(self, samples_per_pixel: u64) -> String {
         format!(
             "{} {} {}",
-            (256.0 * (self[0] / samples_per_pixel as f64).clamp(0.0, 0.999)) as u64,
-            (256.0 * (self[1] / samples_per_pixel as f64).clamp(0.0, 0.999)) as u64,
-            (256.0 * (self[2] / samples_per_pixel as f64).clamp(0.0, 0.999)) as u64,
+            (256.0 * (self[0] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u64,
+            (256.0 * (self[1] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u64,
+            (256.0 * (self[2] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u64,
         )
     }
 }
