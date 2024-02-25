@@ -1,4 +1,5 @@
-use std::ops::{Index, IndexMut, Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use std::ops::{Index, IndexMut, Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, Range};
+use rand::Rng;
 
 #[derive(Clone, Copy)]
 pub struct Vec3 {
@@ -21,6 +22,21 @@ impl Vec3 {
     pub fn new(e0: f64, e1: f64, e2: f64) -> Vec3 {
         Vec3 {
             e: [e0, e1, e2]
+        }
+    }
+
+    pub fn random(rng: &mut impl Rng, r: Range<f64>) -> Vec3 {
+        Vec3 {
+            e: [rng.gen_range(r.clone()), rng.gen_range(r.clone()), rng.gen_range(r.clone())]
+        }
+    }
+
+    pub fn random_in_unit_sphere(rng: &mut impl Rng) -> Vec3 {
+        loop {
+            let v = Vec3::random(rng, -1.0..1.0);
+            if v.length() < 1.0 { // The vector is within the unit sphere.
+                return v;
+            }
         }
     }
 }
