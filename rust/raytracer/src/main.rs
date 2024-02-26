@@ -6,8 +6,8 @@ mod camera;
 
 use std::io::{stderr, Write};
 use rand::{Rng, SeedableRng};
-use rand_chacha::ChaCha8Rng;
 
+use rand_chacha::ChaCha12Rng;
 use vec::{Vec3, Point3, Color};
 use ray::Ray;
 use hit::{Hit, World};
@@ -60,11 +60,11 @@ fn main() {
     println!("{IMAGE_WIDTH} {IMAGE_HEIGHT}");
     println!("255");
 
+    let mut rng = ChaCha12Rng::seed_from_u64(0);
     for j in (0..IMAGE_HEIGHT).rev() {
         eprint!("\rScanlines remaining: {:4}", j + 1);
         stderr().flush().unwrap();
 
-        let mut rng = ChaCha8Rng::seed_from_u64(0);
         for i in 0..IMAGE_WIDTH {
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
             for _ in 0..SAMPLES_PER_PIXEL {
