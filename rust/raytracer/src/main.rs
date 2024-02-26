@@ -29,7 +29,7 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
         let target = rec.p + rec.normal + Vec3::random_in_unit_sphere(rng).normalized();
         let r = Ray::new(rec.p, target - rec.p);
         let bounced_ray_color = ray_color(&r, world, depth - 1, rng);
-        0.25 * rec.normal.cross(bounced_ray_color)
+        0.25 * Color::new(rec.normal.x() * bounced_ray_color.x(), rec.normal.y() * bounced_ray_color.y(), rec.normal.z() * bounced_ray_color.z())
             // Sphere reflects half the light it gets.
     } else {
         let unit_direction = r.direction().normalized();
