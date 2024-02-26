@@ -26,7 +26,7 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
     }
 
     if let Some(rec) = world.hit(r, 0.001, f64::INFINITY) {
-        let target = rec.p + rec.normal + Vec3::random_in_unit_sphere(rng);
+        let target = rec.p + rec.normal + Vec3::random_in_unit_sphere(rng).normalized();
         let r = Ray::new(rec.p, target - rec.p);
         0.5 * ray_color(&r, world, depth - 1, rng)
             // Sphere reflects half the light it gets.
