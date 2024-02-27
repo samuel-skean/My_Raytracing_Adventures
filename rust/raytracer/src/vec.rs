@@ -39,6 +39,16 @@ impl Vec3 {
             }
         }
     }
+
+    pub fn random_in_hemisphere(rng: &mut impl Rng, initial_direction: Vec3) -> Vec3 {
+        let in_unit_sphere = Vec3::random_in_unit_sphere(rng);
+
+        if in_unit_sphere.dot(initial_direction) > 0.0 {
+            in_unit_sphere
+        } else {
+            -1.0 * in_unit_sphere
+        }
+    }
 }
 
 impl Index<usize> for Vec3 {
