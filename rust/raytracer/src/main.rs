@@ -30,7 +30,7 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut ChaCha12Rng) -> Color
 
     if let Some(rec) = world.hit(r, 0.001, f64::INFINITY) {
         if let Some((attenuation, scattered)) = rec.mat.scatter(rng, r, &rec) {
-            attenuation * ray_color(&scattered, world, depth - 1, rng) // TODO: How's this work? Is Mul defined for two vectors? Is that not what's happening?
+            attenuation * ray_color(&scattered, world, depth - 1, rng)
         }
         else {
             Color::new(0.0, 0.0, 0.0)
