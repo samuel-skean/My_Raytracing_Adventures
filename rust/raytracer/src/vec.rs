@@ -140,6 +140,18 @@ impl Mul<Vec3> for f64 {
     }
 }
 
+// This seems to be required for the multiplication of attenuation and Color to
+// work. It's not shown in the rust tutorial, but hey.
+impl Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, other: Vec3) -> Vec3 {
+        Vec3 {
+            e: [self[0] * other[0], self[1] * other[1], self[2] * other[2]]
+        }
+    }
+}
+
 //
 // Division by scalars for Vec3:
 //
@@ -201,6 +213,11 @@ impl Vec3 {
 
     pub fn normalized(self) -> Vec3 {
         self / self.length()
+    }
+
+    pub fn near_zero(self) -> bool {
+        const EPS: f64 = 1.0e-8;
+        self[0].abs() < EPS && self[1].abs() < EPS && self[2].abs() < EPS
     }
 }
 
