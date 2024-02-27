@@ -3,16 +3,19 @@ mod ray;
 mod hit;
 mod sphere;
 mod camera;
+mod material;
 
-use std::io::{stderr, Write};
+use std::{io::{stderr, Write}, rc::Rc};
 use rand::{Rng, SeedableRng};
 
 use rand_chacha::ChaCha12Rng;
 use vec::{Vec3, Point3, Color};
 use ray::Ray;
-use hit::{Hit, HitRecord, World};
+use hit::{Hit, World};
 use sphere::Sphere;
 use camera::Camera;
+
+use material::Lambertian;
 
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
@@ -20,39 +23,18 @@ use camera::Camera;
 // from light blue on the left, through white, and to light blue on the right.
 // Basically, the x stole from the y when it was pointing left and pointing
 // right. This is why the image is pretty :).
-fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
-
-    //
-    // Some kinds of distributions (consider switching between these at various
-    // stages):
-    //
-
-    // *Almost* right. cos^3(theta) instead of cos(theta).
-    #[allow(dead_code)]
-    fn initial_hack(rng: &mut impl Rng, rec: &HitRecord) -> Vec3 {
-        rec.p + rec.normal + Vec3::random_in_unit_sphere(rng)
-    }
-
-    // Correct. cos(theta)
-    fn lambertian(rng: &mut impl Rng, rec: &HitRecord) -> Vec3 {
-        rec.p + rec.normal + Vec3::random_in_unit_sphere(rng).normalized()
-    }
-
-    // Naive.
-    #[allow(dead_code)]
-    fn simple_hemisphere(rng: &mut impl Rng, rec: &HitRecord) -> Vec3 {
-        rec.p + Vec3::random_in_hemisphere(rng, rec.normal)
-    }
-
+fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut ChaCha12Rng) -> Color {
     if depth == 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
 
     if let Some(rec) = world.hit(r, 0.001, f64::INFINITY) {
-        let target = lambertian(rng, &rec);
-        let r = Ray::new(rec.p, target - rec.p);
-        0.5 * ray_color(&r, world, depth - 1, rng)
-            // Sphere reflects half the light it gets.
+        if let Some((attenuation, scattered)) = rec.mat.scatter(rng, r, &rec) {
+            attenuation * ray_color(&scattered, world, depth - 1, rng) // TODO: How's this work? Is Mul defined for two vectors? Is that not what's happening?
+        }
+        else {
+            Color::new(0.0, 0.0, 0.0)
+        }
     } else {
         let unit_direction = r.direction().normalized();
         let t = 0.5 * (unit_direction.y() + 1.0);
@@ -70,9 +52,13 @@ fn main() {
 
     // World
     let mut world = World::new();
-    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+
+    let mat_center = Rc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
+    let mat_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+
+    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, mat_center)));
         // a lil ball
-    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
+    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, mat_ground)));
         // the Earth!
 
     // Camera
