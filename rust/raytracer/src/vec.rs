@@ -141,7 +141,8 @@ impl Mul<Vec3> for f64 {
 }
 
 // This seems to be required for the multiplication of attenuation and Color to
-// work. It's not shown in the rust tutorial, but hey.
+// work. It's not shown in the rust tutorial (or, as far as I can tell, the C++
+// tutorial), but hey.
 impl Mul<Vec3> for Vec3 {
     type Output = Vec3;
 
