@@ -5,6 +5,7 @@ mod sphere;
 mod camera;
 
 use std::io::{stderr, Write};
+use clap::Parser;
 use rand::{Rng, SeedableRng};
 
 use rand_chacha::ChaCha12Rng;
@@ -37,13 +38,37 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
     }
 }
 
-const ASPECT_RATIO: f64 = 16.0 / 9.0;
-const IMAGE_WIDTH: u64 = 256;
-const IMAGE_HEIGHT: u64 = ((IMAGE_WIDTH as f64) / ASPECT_RATIO) as u64;
-const SAMPLES_PER_PIXEL: u64 = 100;
-const MAX_DEPTH: u64 = 5;
+
+// const ASPECT_RATIO: f64 = 16.0 / 9.0;
+// const IMAGE_WIDTH: u64 = 256;
+// const IMAGE_HEIGHT: u64 = ((IMAGE_WIDTH as f64) / ASPECT_RATIO) as u64;
+// const SAMPLES_PER_PIXEL: u64 = 100;
+// const MAX_DEPTH: u64 = 5;
+
+#[derive(Parser, Debug)]
+struct Args {
+    /// Aspect Ratio Height
+    #[arg(short = 'w', long, default_value_t = 16.0)]
+    aspect_ratio_width: f64,
+    /// Aspect Ratio Width
+    #[arg(short = 'a', long, default_value_t = 9.0)]
+    aspect_ratio_height: f64,
+    /// Image Height
+    #[arg(short, long, default_value_t = 144)]
+    image_height: u64,
+    /// Samples Per Pixel
+    #[arg(short, long, default_value_t = 100)]
+    samples_per_pixel: u64,
+    /// Max Bounce Depth
+    #[arg(short, long, default_value_t = 5)]
+    max_depth: u64,
+}
 
 fn main() {
+
+    let args = Args::parse();
+    let aspect_ratio = args.aspect_ratio_width / args.aspect_ratio_height;
+    let image_width = (aspect_ratio * (args.image_height as f64)) as u64;
 
     // World
     let mut world = World::new();
@@ -53,34 +78,34 @@ fn main() {
         // the Earth!
 
     // Camera
-    let cam = Camera::new();
+    let cam = Camera::new(aspect_ratio);
 
     // Header
     println!("P3");
-    println!("{IMAGE_WIDTH} {IMAGE_HEIGHT}");
+    println!("{} {}", image_width, args.image_height);
     println!("255");
 
     let mut rng = ChaCha12Rng::seed_from_u64(0);
-    for j in (0..IMAGE_HEIGHT).rev() {
+    for j in (0..args.image_height).rev() {
         eprint!("\rScanlines remaining: {:4}", j + 1);
         stderr().flush().unwrap();
 
-        for i in 0..IMAGE_WIDTH {
+        for i in 0..image_width {
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
-            for _ in 0..SAMPLES_PER_PIXEL {
+            for _ in 0..args.samples_per_pixel {
                 let random_u_component: f64 = rng.gen();
                 let random_v_component: f64 = rng.gen();
 
                 let u =
-                    ((i as f64) + random_u_component) / ((IMAGE_WIDTH - 1) as f64);
+                    ((i as f64) + random_u_component) / ((image_width - 1) as f64);
                 let v =
-                    ((j as f64) + random_v_component) / ((IMAGE_HEIGHT - 1) as f64);
+                    ((j as f64) + random_v_component) / ((args.image_height - 1) as f64);
 
                 let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, MAX_DEPTH, &mut rng);
+                pixel_color += ray_color(&r, &world, args.max_depth, &mut rng);
             }
 
-            print!("{} ", pixel_color.format_color(SAMPLES_PER_PIXEL));
+            print!("{} ", pixel_color.format_color(args.samples_per_pixel));
         }
         println!();
     }
