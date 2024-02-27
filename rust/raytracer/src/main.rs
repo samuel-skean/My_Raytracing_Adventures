@@ -47,27 +47,38 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
 
 #[derive(Parser, Debug)]
 struct Args {
-    /// Aspect Ratio Height
-    #[arg(short = 'w', long, default_value_t = 16.0)]
-    aspect_ratio_width: f64,
-    /// Aspect Ratio Width
-    #[arg(short = 'a', long, default_value_t = 9.0)]
-    aspect_ratio_height: f64,
+    /// Aspect Ratio
+    #[arg(short = 'r', long, value_delimiter = ' ', num_args = 2, default_value = "16.0 9.0")]
+        // Why doesn't this seem to work when I set value_delimiter to something
+        // other than ' '?
+        // Also, why is value_delimiter necessary to set to get default_value to
+        // work properly, and how hard would it be to switch to default_value_t?
+        // Why can't I have this somehow parse into a tuple?
+        // Thankfully, this seems to require the code have the two components of
+        // the aspect ratio be consecutive, but why is unintuitive - it seems
+        // from the docs like maybe $ cmd -r 16 -s 200 -r 10 should work to
+        // supply [16, 9] as the value of aspect_ratio, but nope.
+        // Also, definitely consider StructOpt, if nothing else for the
+        // structopt-yaml crate, which seems to do exactly what I want when it
+        // comes to providing some options on the command line that override
+        // options in a config file that override options inherent to the program.
+    aspect_ratio: Vec<f64>,
     /// Image Height
-    #[arg(short, long, default_value_t = 144)]
+    #[arg(short = 'H', long, default_value_t = 144)]
     image_height: u64,
     /// Samples Per Pixel
     #[arg(short, long, default_value_t = 100)]
     samples_per_pixel: u64,
     /// Max Bounce Depth
-    #[arg(short, long, default_value_t = 5)]
+    #[arg(short = 'b', long = "bounces", default_value_t = 5)]
     max_depth: u64,
 }
 
 fn main() {
 
     let args = Args::parse();
-    let aspect_ratio = args.aspect_ratio_width / args.aspect_ratio_height;
+
+    let aspect_ratio = args.aspect_ratio[0] / args.aspect_ratio[1];
     let image_width = (aspect_ratio * (args.image_height as f64)) as u64;
 
     // World
