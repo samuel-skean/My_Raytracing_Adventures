@@ -10,7 +10,7 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha12Rng;
 use vec::{Vec3, Point3, Color};
 use ray::Ray;
-use hit::{Hit, World};
+use hit::{Hit, HitRecord, World};
 use sphere::Sphere;
 use camera::Camera;
 
@@ -21,12 +21,35 @@ use camera::Camera;
 // Basically, the x stole from the y when it was pointing left and pointing
 // right. This is why the image is pretty :).
 fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
+
+    //
+    // Some kinds of distributions (consider switching between these at various
+    // stages):
+    //
+
+    // *Almost* right. cos^3(theta) instead of cos(theta).
+    #[allow(dead_code)]
+    fn initial_hack(rng: &mut impl Rng, rec: &HitRecord) -> Vec3 {
+        rec.p + rec.normal + Vec3::random_in_unit_sphere(rng)
+    }
+
+    // Correct. cos(theta)
+    fn lambertian(rng: &mut impl Rng, rec: &HitRecord) -> Vec3 {
+        rec.p + rec.normal + Vec3::random_in_unit_sphere(rng).normalized()
+    }
+
+    // Naive.
+    #[allow(dead_code)]
+    fn simple_hemisphere(rng: &mut impl Rng, rec: &HitRecord) -> Vec3 {
+        rec.p + Vec3::random_in_hemisphere(rng, rec.normal)
+    }
+
     if depth == 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
 
     if let Some(rec) = world.hit(r, 0.001, f64::INFINITY) {
-        let target = rec.p + rec.normal + Vec3::random_in_unit_sphere(rng).normalized();
+        let target = lambertian(rng, &rec);
         let r = Ray::new(rec.p, target - rec.p);
         0.5 * ray_color(&r, world, depth - 1, rng)
             // Sphere reflects half the light it gets.
