@@ -61,30 +61,31 @@ impl Scatter for Lambertian {
 }
 
 pub struct Metal {
-    albedo: Color
+    albedo: Color,
+    fuzz: f64
 }
 
 impl Metal {
-    pub fn new(albedo: Color) -> Metal {
+    pub fn new(albedo: Color, fuzz: f64) -> Metal {
         Metal {
-            albedo
+            albedo,
+            fuzz
         }
     }
 }
 
 impl Scatter for Metal {
-    fn scatter(&self, _: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
+    fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflection_direction = r_in.direction().reflect(rec.normal).normalized();
             // It seems like we don't really need to renormalize this, even
             // though we aren't keeping it normal. What gives?
-        let scattered = Ray::new(rec.p, reflection_direction);
+        let scattered = Ray::new(rec.p, reflection_direction + self.fuzz * Vec3::random_in_unit_sphere(rng));
         if scattered.direction().dot(rec.normal) > 0.0 {
             Some((self.albedo, scattered))
         } else {
-            // It also seems like we're never hitting this else case. That makes
-            // sense, since our reflection should never be against the normal.
-            // Maybe this is in case of something in the future, with flipped
-            // normals?
+            // Now, since we're adding a random perturbation to the direction of
+            // our reflected ray, we need to handle this case because we might have
+            // made the ray go into the sphere.
             None
         }
     }
