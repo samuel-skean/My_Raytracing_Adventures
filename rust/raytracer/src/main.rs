@@ -15,7 +15,7 @@ use hit::{Hit, World};
 use sphere::Sphere;
 use camera::Camera;
 
-use material::{Lambertian, Metal};
+use material::{Scatter, Lambertian, Metal};
 
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
@@ -53,19 +53,38 @@ fn main() {
     // World
     let mut world = World::new();
 
-    let mat_center = Rc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-    let mat_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    let mat_left = Rc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3));
-    let mat_right = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
 
-    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, mat_center)));
-        // a lil ball
-    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, mat_ground)));
-        // the Earth!
-    world.push(Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, mat_left)));
-        // left metal ball
-    world.push(Box::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, mat_right)));
-        // right metal ball
+    let mut rng = ChaCha12Rng::seed_from_u64(0);
+    for _ in 0..80 {
+        let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
+        let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.7) {
+            Rc::new(Metal::new(rand_color, rng.gen()))
+        } else {
+            Rc::new(Lambertian::new(rand_color))
+        };
+        let sphere = if rng.gen_bool(0.9) {
+            Sphere::new(
+                Point3::new(
+                    rng.gen_range(-2.0..2.0),
+                    rng.gen_range(-0.5..1.0),
+                    rng.gen_range(-2.0..-1.0)
+                ),
+                rng.gen_range(0.0..0.4),
+                rand_mat
+            )
+        } else {
+            Sphere::new(
+                Point3::new(
+                    rng.gen_range(-50.0..50.0),
+                    rng.gen_range(-50.0..50.0),
+                    rng.gen_range(-50.0..-25.0)
+                ),
+                rng.gen_range(15.0..20.0),
+                rand_mat
+            )
+        };
+        world.push(Box::new(sphere));
+    }
 
     // Camera
     let cam = Camera::new();
@@ -75,7 +94,6 @@ fn main() {
     println!("{IMAGE_WIDTH} {IMAGE_HEIGHT}");
     println!("255");
 
-    let mut rng = ChaCha12Rng::seed_from_u64(0);
     for j in (0..IMAGE_HEIGHT).rev() {
         eprint!("\rScanlines remaining: {:4}", j + 1);
         stderr().flush().unwrap();
