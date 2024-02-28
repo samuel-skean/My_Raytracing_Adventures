@@ -73,9 +73,19 @@ impl Metal {
 }
 
 impl Scatter for Metal {
-    fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
-        let reflection_direction = r_in.direction().reflect(rec.normal);
-        let reflected = Ray::new(rec.p, reflection_direction);
-        Some((self.albedo, reflected))
+    fn scatter(&self, _: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
+        let reflection_direction = r_in.direction().reflect(rec.normal).normalized();
+            // It seems like we don't really need to renormalize this, even
+            // though we aren't keeping it normal. What gives?
+        let scattered = Ray::new(rec.p, reflection_direction);
+        if scattered.direction().dot(rec.normal) > 0.0 {
+            Some((self.albedo, scattered))
+        } else {
+            // It also seems like we're never hitting this else case. That makes
+            // sense, since our reflection should never be against the normal.
+            // Maybe this is in case of something in the future, with flipped
+            // normals?
+            None
+        }
     }
 }
