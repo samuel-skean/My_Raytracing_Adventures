@@ -55,9 +55,9 @@ fn main() {
 
 
     let mut rng = ChaCha12Rng::seed_from_u64(0);
-    for _ in 0..80 {
+    for _ in 0..200 {
         let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
-        let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.7) {
+        let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.6) {
             Rc::new(Metal::new(rand_color, rng.gen()))
         } else {
             Rc::new(Lambertian::new(rand_color))
