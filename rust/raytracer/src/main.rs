@@ -39,7 +39,7 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
 }
 
 #[derive(Parser, Debug)]
-struct Args {
+struct Cli {
     /// Aspect Ratio
     #[arg(short = 'r', long, value_delimiter = ' ', num_args = 2)]
         // Why doesn't this seem to work when I set value_delimiter to something
@@ -80,7 +80,7 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<Vec<f64>>, width: Option
 
     let resolution = match (width, height) {
         (Some(_), Some(_)) if aspect_ratio_was_specified => {
-            let mut cmd = Args::command();
+            let mut cmd = Cli::command();
             cmd.error(
                 ErrorKind::ArgumentConflict,
                 "Can only specify one resolution dimension along with an aspect ratio."
@@ -112,7 +112,7 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<Vec<f64>>, width: Option
 
 fn main() {
 
-    let args = Args::parse();
+    let args = Cli::parse();
 
     let (aspect_ratio, res) = get_aspect_ratio_and_resolution(args.aspect_ratio, args.image_width, args.image_height);
 
