@@ -48,7 +48,7 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
 #[derive(Parser, Debug)]
 struct Args {
     /// Aspect Ratio
-    #[arg(short = 'r', long, value_delimiter = ' ', num_args = 2, default_value = "16.0 9.0")]
+    #[arg(short = 'r', long, value_delimiter = ' ', num_args = 2)]
         // Why doesn't this seem to work when I set value_delimiter to something
         // other than ' '?
         // Also, why is value_delimiter necessary to set to get default_value to
@@ -62,10 +62,13 @@ struct Args {
         // structopt-yaml crate, which seems to do exactly what I want when it
         // comes to providing some options on the command line that override
         // options in a config file that override options inherent to the program.
-    aspect_ratio: Vec<f64>,
+    aspect_ratio: Option<Vec<f64>>,
+    /// Image width
+    #[arg(short = 'w', long)]
+    image_width: Option<u64>,
     /// Image Height
-    #[arg(short = 'H', long, default_value_t = 144)]
-    image_height: u64,
+    #[arg(short = 'H', long)]
+    image_height: Option<u64>,
     /// Samples Per Pixel
     #[arg(short, long, default_value_t = 100)]
     samples_per_pixel: u64,
@@ -74,12 +77,64 @@ struct Args {
     max_depth: u64,
 }
 
+
+#[derive(Clone, Copy)]
+struct AspectRatio(Option<f64>);
+
+impl From<AspectRatio> for f64 {
+
+    fn from(value: AspectRatio) -> Self {
+        const DEFAULT_ASPECT_RATIO: f64 = 16.0 / 9.0;
+        match value.0 {
+            None => DEFAULT_ASPECT_RATIO,
+            Some(aspect_ratio) => aspect_ratio,
+        }
+    }
+}
+
+struct Resolution {
+    width: u64,
+    height: u64,
+}
+
+fn get_aspect_ratio(aspect_ratio: Option<Vec<f64>>) -> AspectRatio {
+    AspectRatio(
+        aspect_ratio.and_then(|ratio_vec: Vec<f64>| Some(ratio_vec[0] / ratio_vec[1]))
+    )
+}
+
+fn get_resolution(aspect_ratio: AspectRatio, width: Option<u64>, height: Option<u64>) -> Resolution {
+    const DEFAULT_HEIGHT: u64 = 144;
+
+    match (width, height) {
+        (Some(width), Some(height)) => {
+            if aspect_ratio.0.is_some() {
+                panic!("Aspect ratio and both components of resolution were specified. This statement should not be reachable.");
+            }
+            Resolution { width, height }
+        }
+        (Some(width), None) => Resolution {
+            width,
+            height: (width as f64 / f64::from(aspect_ratio)) as u64,
+        },
+        (None, Some(height)) => Resolution {
+            width: (f64::from(aspect_ratio) * height as f64) as u64,
+            height,
+        },
+        (None, None) => Resolution {
+            width: (f64::from(aspect_ratio) * DEFAULT_HEIGHT as f64) as u64,
+            height: DEFAULT_HEIGHT,
+        },
+    }
+}
+
 fn main() {
 
     let args = Args::parse();
 
-    let aspect_ratio = args.aspect_ratio[0] / args.aspect_ratio[1];
-    let image_width = (aspect_ratio * (args.image_height as f64)) as u64;
+    let aspect_ratio = get_aspect_ratio(args.aspect_ratio);
+
+    let res = get_resolution(aspect_ratio, args.image_width, args.image_height);
 
     // World
     let mut world = World::new();
@@ -89,28 +144,28 @@ fn main() {
         // the Earth!
 
     // Camera
-    let cam = Camera::new(aspect_ratio);
+    let cam = Camera::new(f64::from(aspect_ratio));
 
     // Header
     println!("P3");
-    println!("{} {}", image_width, args.image_height);
+    println!("{} {}", res.width, res.height);
     println!("255");
 
     let mut rng = ChaCha12Rng::seed_from_u64(0);
-    for j in (0..args.image_height).rev() {
+    for j in (0..res.height).rev() {
         eprint!("\rScanlines remaining: {:4}", j + 1);
         stderr().flush().unwrap();
 
-        for i in 0..image_width {
+        for i in 0..res.width {
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
             for _ in 0..args.samples_per_pixel {
                 let random_u_component: f64 = rng.gen();
                 let random_v_component: f64 = rng.gen();
 
                 let u =
-                    ((i as f64) + random_u_component) / ((image_width - 1) as f64);
+                    ((i as f64) + random_u_component) / ((res.width - 1) as f64);
                 let v =
-                    ((j as f64) + random_v_component) / ((args.image_height - 1) as f64);
+                    ((j as f64) + random_v_component) / ((res.height - 1) as f64);
 
                 let r = cam.get_ray(u, v);
                 pixel_color += ray_color(&r, &world, args.max_depth, &mut rng);
