@@ -38,31 +38,17 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
     }
 }
 
-
-// const ASPECT_RATIO: f64 = 16.0 / 9.0;
-// const IMAGE_WIDTH: u64 = 256;
-// const IMAGE_HEIGHT: u64 = ((IMAGE_WIDTH as f64) / ASPECT_RATIO) as u64;
-// const SAMPLES_PER_PIXEL: u64 = 100;
-// const MAX_DEPTH: u64 = 5;
-
 #[derive(Parser, Debug)]
 struct Args {
     /// Aspect Ratio
     #[arg(short = 'r', long, value_delimiter = ' ', num_args = 2)]
         // Why doesn't this seem to work when I set value_delimiter to something
         // other than ' '?
-        // Also, why is value_delimiter necessary to set to get default_value to
-        // work properly, and how hard would it be to switch to default_value_t?
         // Why can't I have this somehow parse into a tuple?
         // Thankfully, this seems to require the code have the two components of
         // the aspect ratio be consecutive, but why is unintuitive - it seems
         // from the docs like maybe $ cmd -r 16 -s 200 -r 10 should work to
         // supply [16, 9] as the value of aspect_ratio, but nope.
-        // Also, definitely consider StructOpt, if nothing else for the
-        // structopt-yaml crate, which seems to do exactly what I want when it
-        // comes to providing some options on the command line that override
-        // options in a config file that override options inherent to the
-        // program.
     aspect_ratio: Option<Vec<f64>>,
     /// Image width
     #[arg(short = 'w', long)]
