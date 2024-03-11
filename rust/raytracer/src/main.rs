@@ -5,7 +5,7 @@ mod sphere;
 mod camera;
 
 use std::io::{stderr, Write};
-use clap::Parser;
+use clap::{error::ErrorKind, CommandFactory as _, Parser};
 use rand::{Rng, SeedableRng};
 
 use rand_chacha::ChaCha12Rng;
@@ -61,7 +61,8 @@ struct Args {
         // Also, definitely consider StructOpt, if nothing else for the
         // structopt-yaml crate, which seems to do exactly what I want when it
         // comes to providing some options on the command line that override
-        // options in a config file that override options inherent to the program.
+        // options in a config file that override options inherent to the
+        // program.
     aspect_ratio: Option<Vec<f64>>,
     /// Image width
     #[arg(short = 'w', long)]
@@ -93,7 +94,12 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<Vec<f64>>, width: Option
 
     let resolution = match (width, height) {
         (Some(_), Some(_)) if aspect_ratio_was_specified => {
-            unreachable!("Aspect ratio and both components of resolution were specified. This statement should not be reachable.");
+            let mut cmd = Args::command();
+            cmd.error(
+                ErrorKind::ArgumentConflict,
+                "Can only specify one resolution dimension along with an aspect ratio."
+            )
+            .exit();
         }
         (Some(width), Some(height)) => {
             return (width as f64 / height as f64, Resolution { width, height });
