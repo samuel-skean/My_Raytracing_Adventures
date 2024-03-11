@@ -40,7 +40,14 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
 
 #[derive(Parser, Debug)]
 struct Cli {
-    /// Aspect Ratio
+    // NOTE: I am including a description of the defaults in the doc comments
+    // like the default messages that clap would generate if I were specifying
+    // them as having default values for some of these values.
+    // This is a bit ugly, but necessary if I want to distinguish between the
+    // arguments being specified and the arguments not being specified - I can't
+    // just have clap fill them in.
+
+    /// Aspect ratio [default: 16.0 9.0]
     #[arg(short = 'r', long, value_delimiter = ' ', num_args = 2)]
         // Why doesn't this seem to work when I set value_delimiter to something
         // other than ' '?
@@ -50,16 +57,16 @@ struct Cli {
         // from the docs like maybe $ cmd -r 16 -s 200 -r 10 should work to
         // supply [16, 9] as the value of aspect_ratio, but nope.
     aspect_ratio: Option<Vec<f64>>,
-    /// Image width
+    /// Image width [default: 256]
     #[arg(short = 'w', long)]
     image_width: Option<u64>,
-    /// Image Height
+    /// Image height [default: 144]
     #[arg(short = 'H', long)]
     image_height: Option<u64>,
-    /// Samples Per Pixel
+    /// Samples per pixel
     #[arg(short, long, default_value_t = 100)]
     samples_per_pixel: u64,
-    /// Max Bounce Depth
+    /// Max bounce depth
     #[arg(short = 'b', long = "bounces", default_value_t = 5)]
     max_depth: u64,
 }
