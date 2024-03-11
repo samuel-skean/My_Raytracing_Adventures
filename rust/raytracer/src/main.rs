@@ -77,64 +77,52 @@ struct Args {
     max_depth: u64,
 }
 
-
-#[derive(Clone, Copy)]
-struct AspectRatio(Option<f64>);
-
-impl From<AspectRatio> for f64 {
-
-    fn from(value: AspectRatio) -> Self {
-        const DEFAULT_ASPECT_RATIO: f64 = 16.0 / 9.0;
-        match value.0 {
-            None => DEFAULT_ASPECT_RATIO,
-            Some(aspect_ratio) => aspect_ratio,
-        }
-    }
-}
-
 struct Resolution {
     width: u64,
     height: u64,
 }
 
-fn get_aspect_ratio(aspect_ratio: Option<Vec<f64>>) -> AspectRatio {
-    AspectRatio(
-        aspect_ratio.and_then(|ratio_vec: Vec<f64>| Some(ratio_vec[0] / ratio_vec[1]))
-    )
-}
-
-fn get_resolution(aspect_ratio: AspectRatio, width: Option<u64>, height: Option<u64>) -> Resolution {
+fn get_aspect_ratio_and_resolution(aspect_ratio: Option<Vec<f64>>, width: Option<u64>, height: Option<u64>) -> (f64, Resolution) {
     const DEFAULT_HEIGHT: u64 = 144;
+    const DEFAULT_ASPECT_RATIO: f64 = 16.0 / 9.0;
 
-    match (width, height) {
+    let aspect_ratio_was_specified = aspect_ratio.is_some(); // This is kinda icky.
+    let aspect_ratio = aspect_ratio
+        .and_then(|ratio_vec: Vec<f64>| Some(ratio_vec[0] / ratio_vec[1]))
+        .unwrap_or(DEFAULT_ASPECT_RATIO);
+
+    let resolution = match (width, height) {
         (Some(width), Some(height)) => {
-            if aspect_ratio.0.is_some() {
+            if aspect_ratio_was_specified {
                 panic!("Aspect ratio and both components of resolution were specified. This statement should not be reachable.");
             }
-            Resolution { width, height }
+            return (width as f64 / height as f64, Resolution { width, height });
+            // This early return in a match seems very icky. But it also seems
+            // like the best way to do it!
+            // I kinda wish I had, I dunno, a switch statement.
         }
         (Some(width), None) => Resolution {
             width,
-            height: (width as f64 / f64::from(aspect_ratio)) as u64,
+            height: (width as f64 / aspect_ratio) as u64,
         },
         (None, Some(height)) => Resolution {
-            width: (f64::from(aspect_ratio) * height as f64) as u64,
+            width: (aspect_ratio * height as f64) as u64,
             height,
         },
         (None, None) => Resolution {
-            width: (f64::from(aspect_ratio) * DEFAULT_HEIGHT as f64) as u64,
+            width: (aspect_ratio * DEFAULT_HEIGHT as f64) as u64,
             height: DEFAULT_HEIGHT,
         },
-    }
+    };
+
+    (aspect_ratio, resolution)
 }
 
 fn main() {
 
     let args = Args::parse();
 
-    let aspect_ratio = get_aspect_ratio(args.aspect_ratio);
-
-    let res = get_resolution(aspect_ratio, args.image_width, args.image_height);
+    let (aspect_ratio, res) = get_aspect_ratio_and_resolution(args.aspect_ratio, args.image_width, args.image_height);
 
     // World
     let mut world = World::new();
