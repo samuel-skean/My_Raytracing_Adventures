@@ -92,10 +92,10 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<Vec<f64>>, width: Option
         .unwrap_or(DEFAULT_ASPECT_RATIO);
 
     let resolution = match (width, height) {
+        (Some(_), Some(_)) if aspect_ratio_was_specified => {
+            unreachable!("Aspect ratio and both components of resolution were specified. This statement should not be reachable.");
+        }
         (Some(width), Some(height)) => {
-            if aspect_ratio_was_specified {
-                panic!("Aspect ratio and both components of resolution were specified. This statement should not be reachable.");
-            }
             return (width as f64 / height as f64, Resolution { width, height });
             // This early return in a match seems very icky. But it also seems
             // like the best way to do it!
