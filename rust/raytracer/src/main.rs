@@ -47,16 +47,9 @@ struct Cli {
     // arguments being specified and the arguments not being specified - I can't
     // just have clap fill them in.
 
-    /// Aspect ratio [default: 16.0 9.0]
-    #[arg(short = 'r', long, value_delimiter = ' ', num_args = 2)]
-        // Why doesn't this seem to work when I set value_delimiter to something
-        // other than ' '?
-        // Why can't I have this somehow parse into a tuple?
-        // Thankfully, this seems to require the code have the two components of
-        // the aspect ratio be consecutive, but why is unintuitive - it seems
-        // from the docs like maybe $ cmd -r 16 -s 200 -r 10 should work to
-        // supply [16, 9] as the value of aspect_ratio, but nope.
-    aspect_ratio: Option<Vec<f64>>,
+    /// Aspect ratio [default: 1.77 (same as $[16.0 / 9.0] in bash)]
+    #[arg(short = 'r', long)]
+    aspect_ratio: Option<f64>,
     /// Image width [default: 256]
     #[arg(short = 'w', long)]
     image_width: Option<u64>,
@@ -76,13 +69,12 @@ struct Resolution {
     height: u64,
 }
 
-fn get_aspect_ratio_and_resolution(aspect_ratio: Option<Vec<f64>>, width: Option<u64>, height: Option<u64>) -> (f64, Resolution) {
+fn get_aspect_ratio_and_resolution(aspect_ratio: Option<f64>, width: Option<u64>, height: Option<u64>) -> (f64, Resolution) {
     const DEFAULT_HEIGHT: u64 = 144;
     const DEFAULT_ASPECT_RATIO: f64 = 16.0 / 9.0;
 
     let aspect_ratio_was_specified = aspect_ratio.is_some(); // This is kinda icky.
     let aspect_ratio = aspect_ratio
-        .and_then(|ratio_vec: Vec<f64>| Some(ratio_vec[0] / ratio_vec[1]))
         .unwrap_or(DEFAULT_ASPECT_RATIO);
 
     let resolution = match (width, height) {
