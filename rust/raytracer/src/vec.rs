@@ -39,6 +39,16 @@ impl Vec3 {
             }
         }
     }
+
+    pub fn random_in_hemisphere(rng: &mut impl Rng, initial_direction: Vec3) -> Vec3 {
+        let in_unit_sphere = Vec3::random_in_unit_sphere(rng);
+
+        if in_unit_sphere.dot(initial_direction) > 0.0 {
+            in_unit_sphere
+        } else {
+            -1.0 * in_unit_sphere
+        }
+    }
 }
 
 impl Index<usize> for Vec3 {
@@ -130,6 +140,19 @@ impl Mul<Vec3> for f64 {
     }
 }
 
+// This seems to be required for the multiplication of attenuation and Color to
+// work. It's not shown in the rust tutorial (or, as far as I can tell, the C++
+// tutorial), but hey.
+impl Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, other: Vec3) -> Vec3 {
+        Vec3 {
+            e: [self[0] * other[0], self[1] * other[1], self[2] * other[2]]
+        }
+    }
+}
+
 //
 // Division by scalars for Vec3:
 //
@@ -191,6 +214,15 @@ impl Vec3 {
 
     pub fn normalized(self) -> Vec3 {
         self / self.length()
+    }
+
+    pub fn near_zero(self) -> bool {
+        const EPS: f64 = 1.0e-8;
+        self[0].abs() < EPS && self[1].abs() < EPS && self[2].abs() < EPS
+    }
+
+    pub fn reflect(self, n: Vec3) -> Vec3 {
+        self - 2.0 * self.dot(n) * n
     }
 }
 

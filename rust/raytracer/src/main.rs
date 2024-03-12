@@ -3,8 +3,9 @@ mod ray;
 mod hit;
 mod sphere;
 mod camera;
+mod material;
 
-use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}};
+use std::{fs::File, {io::{self, stderr, BufReader, BufWriter, Write}, rc::Rc}};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
 use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
@@ -16,22 +17,26 @@ use hit::{Hit, World};
 use sphere::Sphere;
 use camera::Camera;
 
+use material::{Lambertian, Metal};
+
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
 // Because the ray is normalized first, there is a slight horizontal gradient
 // from light blue on the left, through white, and to light blue on the right.
 // Basically, the x stole from the y when it was pointing left and pointing
 // right. This is why the image is pretty :).
-fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
+fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut ChaCha12Rng) -> Color {
     if depth == 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
 
     if let Some(rec) = world.hit(r, 0.001, f64::INFINITY) {
-        let target = rec.p + rec.normal + Vec3::random_in_unit_sphere(rng).normalized();
-        let r = Ray::new(rec.p, target - rec.p);
-        0.5 * ray_color(&r, world, depth - 1, rng)
-            // Sphere reflects half the light it gets.
+        if let Some((attenuation, scattered)) = rec.mat.scatter(rng, r, &rec) {
+            attenuation * ray_color(&scattered, world, depth - 1, rng)
+        }
+        else {
+            Color::new(0.0, 0.0, 0.0)
+        }
     } else {
         let unit_direction = r.direction().normalized();
         let t = 0.5 * (unit_direction.y() + 1.0);
@@ -187,10 +192,20 @@ fn main() -> io::Result<()> {
 
     // World
     let mut world = World::new();
-    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+
+    let mat_center = Rc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
+    let mat_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let mat_left = Rc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3));
+    let mat_right = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
+
+    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, mat_center)));
         // a lil ball
-    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
+    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, mat_ground)));
         // the Earth!
+    world.push(Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, mat_left)));
+        // left metal ball
+    world.push(Box::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, mat_right)));
+        // right metal ball
 
     // Camera
     let cam = Camera::new(f64::from(aspect_ratio));
