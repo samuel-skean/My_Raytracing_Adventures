@@ -4,8 +4,9 @@ mod hit;
 mod sphere;
 mod camera;
 
-use std::io::{stderr, Write};
-use clap::{error::ErrorKind, CommandFactory as _, Parser};
+use std::{fs::File, io::{self, stderr, BufReader, Write}};
+use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
+use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
 
 use rand_chacha::ChaCha12Rng;
@@ -38,14 +39,23 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut impl Rng) -> Color {
     }
 }
 
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 struct Cli {
-    // NOTE: I am including a description of the defaults in the doc comments
-    // like the default messages that clap would generate if I were specifying
-    // them as having default values for some of these values.
-    // This is a bit ugly, but necessary if I want to distinguish between the
-    // arguments being specified and the arguments not being specified - I can't
-    // just have clap fill them in.
+    #[arg(short, long)]
+    config_path: Option<std::path::PathBuf>,
+    #[arg(short, long)]
+    quiet: bool,
+    #[command(flatten)]
+    config: <Config as ClapSerde>::Opt,
+}
+
+#[derive(Debug, Serialize, Deserialize, ClapSerde)]
+struct Config {
+    // NOTE: I am faking all of the default arguments now, since I've
+    // implemented my own logic for how they work. It's a shame that everything
+    // has to appear in multiple places now. It seems like there's "a way" to
+    // get this fixed up at compile time but it involves hella macros.
+    // (https://stackoverflow.com/questions/72588743/can-you-use-a-const-value-in-docs-in-rust)
 
     /// Aspect ratio [default: 1.77 (same as $[16.0 / 9.0] in bash)]
     #[arg(short = 'r', long)]
@@ -56,11 +66,11 @@ struct Cli {
     /// Image height [default: 144]
     #[arg(short = 'H', long)]
     image_height: Option<u64>,
-    /// Samples per pixel
-    #[arg(short, long, default_value_t = 100)]
+    /// Samples per pixel [default: 100]
+    #[arg(short, long)]
     samples_per_pixel: u64,
-    /// Max bounce depth
-    #[arg(short = 'b', long = "bounces", default_value_t = 5)]
+    /// Max bounce depth [default: 5]
+    #[arg(short = 'b', long = "bounces")]
     max_depth: u64,
 }
 
@@ -109,11 +119,37 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<f64>, width: Option<u64>
     (aspect_ratio, resolution)
 }
 
-fn main() {
+fn main() -> io::Result<()> {
+
+    let default_config =  Config {
+        aspect_ratio: None,
+        image_width: None,
+        image_height: None,
+        samples_per_pixel: 100,
+        max_depth: 5,
+    };
 
     let args = Cli::parse();
 
-    let (aspect_ratio, res) = get_aspect_ratio_and_resolution(args.aspect_ratio, args.image_width, args.image_height);
+    let config = match args.config_path {
+        Some(path) => {
+            let file = File::open(&path)?;
+            default_config
+            .merge(<Config as ClapSerde>::Opt::from(serde_json::from_reader::<_, <Config as ClapSerde>::Opt>(BufReader::new(file))?))
+            .merge(args.config)
+        }
+        None => {
+            eprintln!("No config file provided. Continuing with only the arguments and the defaults.");
+            default_config
+            .merge(<Config as ClapSerde>::Opt::from(args.config))
+        }
+    };
+
+    let (aspect_ratio, res) = get_aspect_ratio_and_resolution(config.aspect_ratio, config.image_width, config.image_height);
+
+    if !args.quiet {
+        eprintln!("Using this configuration: {}", serde_json::to_string_pretty(&config)?);
+    }
 
     // World
     let mut world = World::new();
@@ -137,7 +173,7 @@ fn main() {
 
         for i in 0..res.width {
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
-            for _ in 0..args.samples_per_pixel {
+            for _ in 0..config.samples_per_pixel {
                 let random_u_component: f64 = rng.gen();
                 let random_v_component: f64 = rng.gen();
 
@@ -147,12 +183,14 @@ fn main() {
                     ((j as f64) + random_v_component) / ((res.height - 1) as f64);
 
                 let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, args.max_depth, &mut rng);
+                pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
             }
 
-            print!("{} ", pixel_color.format_color(args.samples_per_pixel));
+            print!("{} ", pixel_color.format_color(config.samples_per_pixel));
         }
         println!();
     }
     eprintln!("\rDone!                          ");
+
+    Ok(())
 }
