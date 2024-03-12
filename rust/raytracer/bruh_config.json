@@ -1,6 +1,0 @@
-{
-    "image_width" : 3840,
-    "samples_per_pixel" : 20,
-    "max_depth" : 5,
-    "output_path" : "bruh.ppm"
-}
