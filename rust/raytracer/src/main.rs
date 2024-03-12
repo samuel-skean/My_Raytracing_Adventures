@@ -74,6 +74,8 @@ struct Config {
     max_depth: u64,
     #[arg(short, long)]
     output_path: Option<std::path::PathBuf>,
+    #[arg(short = 'R', long)]
+    random_seed: u64,
 }
 
 struct Resolution {
@@ -130,6 +132,7 @@ fn main() -> io::Result<()> {
         samples_per_pixel: 100,
         max_depth: 5,
         output_path: None,
+        random_seed: 0,
     };
 
     let args = Cli::parse();
@@ -195,7 +198,7 @@ fn main() -> io::Result<()> {
     writeln!(output, "{} {}", res.width, res.height)?;
     writeln!(output, "255")?;
 
-    let mut rng = ChaCha12Rng::seed_from_u64(0);
+    let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
     for j in (0..res.height).rev() {
         eprint!("\rScanlines remaining: {:4}", j + 1);
         stderr().flush().unwrap();
