@@ -1,5 +1,5 @@
 {
     "image_width" : 1920,
     "image_height" : 1080,
-    "output_path" : "bigimage.ppm"
+    "output_path" : "images/bigimage.ppm"
 }
