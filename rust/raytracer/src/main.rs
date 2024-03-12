@@ -4,7 +4,7 @@ mod hit;
 mod sphere;
 mod camera;
 
-use std::{fs::File, io::{self, stderr, BufReader, Write}};
+use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
 use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
@@ -72,6 +72,8 @@ struct Config {
     /// Max bounce depth [default: 5]
     #[arg(short = 'b', long = "bounces")]
     max_depth: u64,
+    #[arg(short, long)]
+    output_path: Option<std::path::PathBuf>,
 }
 
 struct Resolution {
@@ -127,6 +129,7 @@ fn main() -> io::Result<()> {
         image_height: None,
         samples_per_pixel: 100,
         max_depth: 5,
+        output_path: None,
     };
 
     let args = Cli::parse();
@@ -142,6 +145,23 @@ fn main() -> io::Result<()> {
             eprintln!("No config file provided. Continuing with only the arguments and the defaults.");
             default_config
             .merge(<Config as ClapSerde>::Opt::from(args.config))
+        }
+    };
+
+    // Following this code: https://users.rust-lang.org/t/write-to-stdout-stderr-or-file/29739
+    let mut output: Box<dyn io::Write> = match config.output_path {
+        None => Box::new(io::stdout()),
+        Some(ref output_path) => {
+            // TODO: Check if the extension ends in .ppm (using the below as a
+            // starting point).
+            // // I wish I could combine these two conditionals into one, but it
+            // // doesn't seem like it:
+            // if let Some(extension) = output_path.extension() {
+            //     if extension.as_bytes() != b".ppm" {
+            //         panic!("The output path specified does not end in .ppm.");
+            //     }
+            // }
+            Box::new(BufWriter::new(File::create(output_path)?))
         }
     };
 
@@ -171,9 +191,9 @@ fn main() -> io::Result<()> {
     let cam = Camera::new(f64::from(aspect_ratio));
 
     // Header
-    println!("P3");
-    println!("{} {}", res.width, res.height);
-    println!("255");
+    writeln!(output, "P3")?;
+    writeln!(output, "{} {}", res.width, res.height)?;
+    writeln!(output, "255")?;
 
     let mut rng = ChaCha12Rng::seed_from_u64(0);
     for j in (0..res.height).rev() {
@@ -195,9 +215,9 @@ fn main() -> io::Result<()> {
                 pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
             }
 
-            print!("{} ", pixel_color.format_color(config.samples_per_pixel));
+            write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
         }
-        println!();
+        writeln!(output)?;
     }
     eprintln!("\rDone!                          ");
 
