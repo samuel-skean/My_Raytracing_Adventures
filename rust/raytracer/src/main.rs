@@ -149,6 +149,15 @@ fn main() -> io::Result<()> {
 
     if !args.quiet {
         eprintln!("Using this configuration: {}", serde_json::to_string_pretty(&config)?);
+        // TODO: This presents the configuration in a pretty way, but it doesn't
+        // fill in anything that the program has computed from the input that
+        // wasn't directly specified (that is, there could be a missing aspect
+        // ratio, or dimension to the resolution - in fact, I think their must
+        // be!). In an ideal world, the output here would be valid to feed back
+        // into the program and would be glanceable. Basically, I think in the
+        // ideal world we'd want to accept JSON files with aspect ratios and
+        // resolutions fully specified - as long as those values don't conflict
+        // with each other.
     }
 
     // World
