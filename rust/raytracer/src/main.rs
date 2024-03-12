@@ -72,8 +72,10 @@ struct Config {
     /// Max bounce depth [default: 5]
     #[arg(short = 'b', long = "bounces")]
     max_depth: u64,
+    /// Path of the file to output to. If not specified, defaults to standard output.
     #[arg(short, long)]
     output_path: Option<std::path::PathBuf>,
+    /// Random seed to use throughout the program, mostly for ray bounces.
     #[arg(short = 'R', long)]
     random_seed: u64,
 }
