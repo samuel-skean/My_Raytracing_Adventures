@@ -162,15 +162,13 @@ fn main() -> io::Result<()> {
     let mut output: Box<dyn io::Write> = match config.output_path {
         None => Box::new(io::stdout()),
         Some(ref output_path) => {
-            // TODO: Check if the extension ends in .ppm (using the below as a
-            // starting point).
-            // // I wish I could combine these two conditionals into one, but it
-            // // doesn't seem like it:
-            // if let Some(extension) = output_path.extension() {
-            //     if extension.as_bytes() != b".ppm" {
-            //         panic!("The output path specified does not end in .ppm.");
-            //     }
-            // }
+            // I feel like using .extension() is better for some reason, but I
+            // found it difficult to handle the absent case and the present case
+            // in the same way.
+            if !output_path.ends_with(".ppm") {
+                panic!("The output path specified, {}, does not end in .ppm.", output_path.to_str()
+                    .expect("The output path was not valid UTF-8."));
+            }
             Box::new(BufWriter::new(File::create(output_path)?))
         }
     };
