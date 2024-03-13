@@ -84,27 +84,5 @@
       },
       "fuzz": 1.0
     }
-  },
-  {
-    "type": "Sphere",
-    "center" : {
-      "e": [
-        0.0,
-        0.0,
-        -100
-      ]
-    },
-    "radius": 70,
-    "mat": {
-      "type": "Lambertian",
-      "albedo": {
-        "e": [
-          1.0,
-          0.5,
-          0.2
-        ]
-      },
-      "fuzz": 0.2
-    }
   }
 ]
