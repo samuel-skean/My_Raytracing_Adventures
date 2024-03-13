@@ -127,8 +127,7 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<f64>, width: Option<u64>
 }
 
 fn main() -> io::Result<()> {
-
-    let default_config =  Config {
+    let default_config = Config {
         aspect_ratio: None,
         image_width: None,
         image_height: None,
@@ -145,13 +144,19 @@ fn main() -> io::Result<()> {
         Some(path) => {
             let file = File::open(&path)?;
             default_config
-            .merge(<Config as ClapSerde>::Opt::from(serde_json::from_reader::<_, <Config as ClapSerde>::Opt>(BufReader::new(file))?))
-            .merge(args.config)
+                .merge(<Config as ClapSerde>::Opt::from(serde_json::from_reader::<
+                    _,
+                    <Config as ClapSerde>::Opt,
+                >(
+                    BufReader::new(file)
+                )?))
+                .merge(args.config)
         }
         None => {
-            eprintln!("No config file provided. Continuing with only the arguments and the defaults.");
-            default_config
-            .merge(<Config as ClapSerde>::Opt::from(args.config))
+            eprintln!(
+                "No config file provided. Continuing with only the arguments and the defaults."
+            );
+            default_config.merge(<Config as ClapSerde>::Opt::from(args.config))
         }
     };
 
