@@ -1,7 +1,8 @@
 use std::ops::{Index, IndexMut, Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, Range};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct Vec3 {
     e: [f64; 3]
 }

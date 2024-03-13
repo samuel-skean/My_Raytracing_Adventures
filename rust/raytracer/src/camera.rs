@@ -1,6 +1,5 @@
 use super::vec::{Point3, Vec3};
 use super::ray::Ray;
-use super::ASPECT_RATIO;
 
 pub struct Camera {
     origin: Point3,
@@ -10,13 +9,13 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new() -> Camera {
+    pub fn new(aspect_ratio: f64) -> Camera {
         const VIEWPORT_HEIGHT: f64 = 2.0;
-        const VIEWPORT_WIDTH: f64 = ASPECT_RATIO * VIEWPORT_HEIGHT;
+        let viewport_width: f64 = aspect_ratio * VIEWPORT_HEIGHT;
         const FOCAL_LENGTH: f64 = 1.0;
 
         let origin = Point3::new(0.0, 0.0, 0.0);
-        let horizontal = Vec3::new(VIEWPORT_WIDTH, 0.0, 0.0);
+        let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
         let vertical = Vec3::new(0.0, VIEWPORT_HEIGHT, 0.0);
         let lower_left_corner =
             origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, FOCAL_LENGTH);
