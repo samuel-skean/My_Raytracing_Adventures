@@ -162,12 +162,15 @@ fn main() -> io::Result<()> {
     let mut output: Box<dyn io::Write> = match config.output_path {
         None => Box::new(io::stdout()),
         Some(ref output_path) => {
-            // I feel like using .extension() is better for some reason, but I
-            // found it difficult to handle the absent case and the present case
-            // in the same way.
-            if !output_path.ends_with(".ppm") {
+            let extension_error = || {
                 panic!("The output path specified, {}, does not end in .ppm.", output_path.to_str()
                     .expect("The output path was not valid UTF-8."));
+            };
+            let Some(extension) = output_path.extension() else {
+                extension_error()
+            };
+            if extension != "ppm" {
+                extension_error()
             }
             Box::new(BufWriter::new(File::create(output_path)?))
         }
