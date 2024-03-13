@@ -5,7 +5,7 @@ mod sphere;
 mod camera;
 mod material;
 
-use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, rc::Rc};
+use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
 use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
@@ -15,12 +15,6 @@ use vec::{Vec3, Color};
 use ray::Ray;
 use hit::{Hit, World};
 use camera::Camera;
-
-use material::{Scatter, Lambertian, Metal};
-
-use sphere::Sphere;
-
-use vec::Point3;
 
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
@@ -195,78 +189,41 @@ fn main() -> io::Result<()> {
     }
 
     // World
-    let mut world = World::new();
+    let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap())?))?;
 
+    // Camera
+    let cam = Camera::new(f64::from(aspect_ratio));
+
+    // Header
+    writeln!(output, "P3")?;
+    writeln!(output, "{} {}", res.width, res.height)?;
+    writeln!(output, "255")?;
 
     let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-    for _ in 0..200 {
-        let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
-        let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.6) {
-            Rc::new(Metal::new(rand_color, rng.gen()))
-        } else {
-            Rc::new(Lambertian::new(rand_color))
-        };
-        let sphere = if rng.gen_bool(0.9) {
-            Sphere::new(
-                Point3::new(
-                    rng.gen_range(-2.0..2.0),
-                    rng.gen_range(-0.5..1.0),
-                    rng.gen_range(-2.0..-1.0)
-                ),
-                rng.gen_range(0.0..0.4),
-                rand_mat
-            )
-        } else {
-            Sphere::new(
-                Point3::new(
-                    rng.gen_range(-50.0..50.0),
-                    rng.gen_range(-50.0..50.0),
-                    rng.gen_range(-50.0..-25.0)
-                ),
-                rng.gen_range(15.0..20.0),
-                rand_mat
-            )
-        };
-        world.push(Box::new(sphere));
+    for j in (0..res.height).rev() {
+        eprint!("\rScanlines remaining: {:4}", j + 1);
+        stderr().flush().unwrap();
+
+        for i in 0..res.width {
+            let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
+            for _ in 0..config.samples_per_pixel {
+                let random_u_component: f64 = rng.gen();
+                let random_v_component: f64 = rng.gen();
+
+                let u =
+                    ((i as f64) + random_u_component) / ((res.width - 1) as f64);
+                let v =
+                    ((j as f64) + random_v_component) / ((res.height - 1) as f64);
+
+                let r = cam.get_ray(u, v);
+                pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
+            }
+
+            write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
+        }
+        writeln!(output)?;
     }
-
-    let crazy_scene_file = BufWriter::new(File::create("crazy-scene_world.json")?);
-
-    serde_json::to_writer(crazy_scene_file, &world)?;
-
-    // // Camera
-    // let cam = Camera::new(f64::from(aspect_ratio));
-
-    // // Header
-    // writeln!(output, "P3")?;
-    // writeln!(output, "{} {}", res.width, res.height)?;
-    // writeln!(output, "255")?;
-
-    // let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-    // for j in (0..res.height).rev() {
-    //     eprint!("\rScanlines remaining: {:4}", j + 1);
-    //     stderr().flush().unwrap();
-
-    //     for i in 0..res.width {
-    //         let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
-    //         for _ in 0..config.samples_per_pixel {
-    //             let random_u_component: f64 = rng.gen();
-    //             let random_v_component: f64 = rng.gen();
-
-    //             let u =
-    //                 ((i as f64) + random_u_component) / ((res.width - 1) as f64);
-    //             let v =
-    //                 ((j as f64) + random_v_component) / ((res.height - 1) as f64);
-
-    //             let r = cam.get_ray(u, v);
-    //             pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
-    //         }
-
-    //         write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
-    //     }
-    //     writeln!(output)?;
-    // }
-    // eprintln!("\rDone!                          ");
+    eprintln!("\rDone!                          ");
 
     Ok(())
 }
