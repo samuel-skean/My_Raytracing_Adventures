@@ -155,6 +155,8 @@ fn main() -> io::Result<()> {
         }
     };
 
+    let (aspect_ratio, res) = get_aspect_ratio_and_resolution(config.aspect_ratio, config.image_width, config.image_height);
+
     // Following this code: https://users.rust-lang.org/t/write-to-stdout-stderr-or-file/29739
     let mut output: Box<dyn io::Write> = match config.output_path {
         None => Box::new(io::stdout()),
@@ -172,8 +174,6 @@ fn main() -> io::Result<()> {
             Box::new(BufWriter::new(File::create(output_path)?))
         }
     };
-
-    let (aspect_ratio, res) = get_aspect_ratio_and_resolution(config.aspect_ratio, config.image_width, config.image_height);
 
     if !args.quiet {
         eprintln!("Using this configuration: {}", serde_json::to_string_pretty(&config)?);
