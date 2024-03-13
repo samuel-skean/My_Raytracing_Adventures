@@ -1,4 +1,4 @@
 {
     "output_path" : "images/image.ppm",
-    "world_path" : "sample_world.json"
+    "world_path" : "crazy-scene_world.json"
 }
