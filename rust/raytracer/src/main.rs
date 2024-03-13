@@ -94,12 +94,13 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<f64>, width: Option<u64>
     const DEFAULT_HEIGHT: u64 = 144;
     const DEFAULT_ASPECT_RATIO: f64 = 16.0 / 9.0;
 
-    let aspect_ratio_was_specified = aspect_ratio.is_some(); // This is kinda icky.
-    let aspect_ratio = aspect_ratio
-        .unwrap_or(DEFAULT_ASPECT_RATIO);
+    // Still a bit icky, but I could keep bikeshedding for days. I wish I had
+    // something like a switch statement!
 
-    let resolution = match (width, height) {
-        (Some(_), Some(_)) if aspect_ratio_was_specified => {
+    let calculated_aspect_ratio = aspect_ratio.unwrap_or(DEFAULT_ASPECT_RATIO);
+
+    match (aspect_ratio, width, height) {
+        (Some(_), Some(_), Some(_)) => {
             let mut cmd = Cli::command();
             cmd.error(
                 ErrorKind::ArgumentConflict,
@@ -107,27 +108,22 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<f64>, width: Option<u64>
             )
             .exit();
         }
-        (Some(width), Some(height)) => {
-            return (width as f64 / height as f64, Resolution { width, height });
-            // This early return in a match seems very icky. But it also seems
-            // like the best way to do it!
-            // I kinda wish I had, I dunno, a switch statement.
+        (None, Some(width), Some(height)) => {
+            (width as f64 / height as f64, Resolution { width, height })
         }
-        (Some(width), None) => Resolution {
+        (_, Some(width), None) => (calculated_aspect_ratio, Resolution {
             width,
-            height: (width as f64 / aspect_ratio) as u64,
-        },
-        (None, Some(height)) => Resolution {
-            width: (aspect_ratio * height as f64) as u64,
+            height: (width as f64 / calculated_aspect_ratio) as u64,
+        } ),
+        (_, None, Some(height)) => (calculated_aspect_ratio, Resolution {
+            width: (calculated_aspect_ratio * height as f64) as u64,
             height,
-        },
-        (None, None) => Resolution {
-            width: (aspect_ratio * DEFAULT_HEIGHT as f64) as u64,
+        }),
+        (_, None, None) => (calculated_aspect_ratio, Resolution {
+            width: (calculated_aspect_ratio * DEFAULT_HEIGHT as f64) as u64,
             height: DEFAULT_HEIGHT,
-        },
-    };
-
-    (aspect_ratio, resolution)
+        }),
+    }
 }
 
 fn main() -> io::Result<()> {
