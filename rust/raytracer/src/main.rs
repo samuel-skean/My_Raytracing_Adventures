@@ -230,39 +230,43 @@ fn main() -> io::Result<()> {
         world.push(Box::new(sphere));
     }
 
-    // Camera
-    let cam = Camera::new(f64::from(aspect_ratio));
+    let crazy_scene_file = BufWriter::new(File::create("crazy-scene_world.json")?);
 
-    // Header
-    writeln!(output, "P3")?;
-    writeln!(output, "{} {}", res.width, res.height)?;
-    writeln!(output, "255")?;
+    serde_json::to_writer(crazy_scene_file, &world)?;
 
-    let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-    for j in (0..res.height).rev() {
-        eprint!("\rScanlines remaining: {:4}", j + 1);
-        stderr().flush().unwrap();
+    // // Camera
+    // let cam = Camera::new(f64::from(aspect_ratio));
 
-        for i in 0..res.width {
-            let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
-            for _ in 0..config.samples_per_pixel {
-                let random_u_component: f64 = rng.gen();
-                let random_v_component: f64 = rng.gen();
+    // // Header
+    // writeln!(output, "P3")?;
+    // writeln!(output, "{} {}", res.width, res.height)?;
+    // writeln!(output, "255")?;
 
-                let u =
-                    ((i as f64) + random_u_component) / ((res.width - 1) as f64);
-                let v =
-                    ((j as f64) + random_v_component) / ((res.height - 1) as f64);
+    // let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
+    // for j in (0..res.height).rev() {
+    //     eprint!("\rScanlines remaining: {:4}", j + 1);
+    //     stderr().flush().unwrap();
 
-                let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
-            }
+    //     for i in 0..res.width {
+    //         let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
+    //         for _ in 0..config.samples_per_pixel {
+    //             let random_u_component: f64 = rng.gen();
+    //             let random_v_component: f64 = rng.gen();
 
-            write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
-        }
-        writeln!(output)?;
-    }
-    eprintln!("\rDone!                          ");
+    //             let u =
+    //                 ((i as f64) + random_u_component) / ((res.width - 1) as f64);
+    //             let v =
+    //                 ((j as f64) + random_v_component) / ((res.height - 1) as f64);
+
+    //             let r = cam.get_ray(u, v);
+    //             pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
+    //         }
+
+    //         write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
+    //     }
+    //     writeln!(output)?;
+    // }
+    // eprintln!("\rDone!                          ");
 
     Ok(())
 }
