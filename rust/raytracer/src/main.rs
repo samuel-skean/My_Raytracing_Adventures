@@ -5,19 +5,16 @@ mod sphere;
 mod camera;
 mod material;
 
-use std::{fs::File, {io::{self, stderr, BufReader, BufWriter, Write}, rc::Rc}};
+use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
 use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
 
 use rand_chacha::ChaCha12Rng;
-use vec::{Vec3, Point3, Color};
+use vec::{Vec3, Color};
 use ray::Ray;
 use hit::{Hit, World};
-use sphere::Sphere;
 use camera::Camera;
-
-use material::{Lambertian, Metal};
 
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
@@ -192,21 +189,7 @@ fn main() -> io::Result<()> {
     }
 
     // World
-    let mut world = World::new();
-
-    let mat_center = Rc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-    let mat_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    let mat_left = Rc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3));
-    let mat_right = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
-
-    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, mat_center)));
-        // a lil ball
-    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, mat_ground)));
-        // the Earth!
-    world.push(Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, mat_left)));
-        // left metal ball
-    world.push(Box::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, mat_right)));
-        // right metal ball
+    let world = serde_json::from_reader(BufReader::new(File::open("sample_world.json")?))?;
 
     // Camera
     let cam = Camera::new(f64::from(aspect_ratio));

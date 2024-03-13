@@ -30,7 +30,7 @@ impl HitRecord {
 }
 
 
-
+#[typetag::serde(tag = "type")]
 pub trait Hit {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
 }
@@ -40,6 +40,7 @@ pub type World = Vec<Box<dyn Hit>>;
     // I kinda wish I could safely inherit from this type,
     // making this a new type but still with all those methods.
 
+#[typetag::serde]
 impl Hit for World {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let mut tmp_rec = None;

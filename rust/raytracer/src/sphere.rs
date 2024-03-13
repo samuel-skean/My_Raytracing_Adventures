@@ -1,10 +1,13 @@
 use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
+
 use super::material::Scatter;
 use super::vec::Point3;
 use super::ray::Ray;
 use super::hit::{Hit, HitRecord};
 
+#[derive(Serialize, Deserialize)]
 pub struct Sphere {
     center: Point3,
     radius: f64,
@@ -12,6 +15,7 @@ pub struct Sphere {
 }
 
 impl Sphere {
+    #[allow(unused)]
     pub fn new(center: Point3, radius: f64, mat: Rc<dyn Scatter>) -> Sphere {
         Sphere {
             center,
@@ -21,6 +25,7 @@ impl Sphere {
     }
 }
 
+#[typetag::serde]
 impl Hit for Sphere {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let oc = r.origin() - self.center; // A - C
