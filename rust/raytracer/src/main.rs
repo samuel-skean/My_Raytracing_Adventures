@@ -63,7 +63,7 @@ struct Config {
     #[arg(short = 'r', long)]
     aspect_ratio: Option<f64>,
     /// Image width [default: 256]
-    #[arg(short = 'w', long)]
+    #[arg(short = 'W', long)]
     image_width: Option<u64>,
     /// Image height [default: 144]
     #[arg(short = 'H', long)]
@@ -80,6 +80,9 @@ struct Config {
     /// Random seed to use throughout the program, mostly for ray bounces.
     #[arg(short = 'R', long)]
     random_seed: u64,
+    /// Only required if no config is specified.
+    #[arg(required_unless_present("config_path"))]
+    world_path: Option<std::path::PathBuf>,
 }
 
 struct Resolution {
@@ -137,6 +140,7 @@ fn main() -> io::Result<()> {
         max_depth: 5,
         output_path: None,
         random_seed: 0,
+        world_path: None,
     };
 
     let args = Cli::parse();
@@ -189,7 +193,7 @@ fn main() -> io::Result<()> {
     }
 
     // World
-    let world = serde_json::from_reader(BufReader::new(File::open("sample_world.json")?))?;
+    let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap())?))?;
 
     // Camera
     let cam = Camera::new(f64::from(aspect_ratio));
