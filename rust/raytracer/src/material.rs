@@ -1,19 +1,23 @@
 use rand::Rng;
 use rand_chacha::ChaCha12Rng;
+use serde::{Deserialize, Serialize};
 
 use super::hit::HitRecord;
 use super::ray::Ray;
 use super::vec::{Vec3, Color};
 
+#[typetag::serde(tag = "type")]
 pub trait Scatter {
     fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Lambertian {
     albedo: Color
 }
 
 impl Lambertian {
+    #[allow(unused)]
     pub fn new(albedo: Color) -> Lambertian {
         Lambertian {
             albedo
@@ -21,6 +25,7 @@ impl Lambertian {
     }
 }
 
+#[typetag::serde]
 impl Scatter for Lambertian {
     fn scatter(&self, rng: &mut ChaCha12Rng, _r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
             // I believe this return tuple should be thought of as "(attenuation, direction)".
@@ -60,12 +65,14 @@ impl Scatter for Lambertian {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Metal {
     albedo: Color,
     fuzz: f64
 }
 
 impl Metal {
+    #[allow(unused)]
     pub fn new(albedo: Color, fuzz: f64) -> Metal {
         Metal {
             albedo,
@@ -74,6 +81,7 @@ impl Metal {
     }
 }
 
+#[typetag::serde]
 impl Scatter for Metal {
     fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflection_direction = r_in.direction().reflect(rec.normal).normalized();
