@@ -1,6 +1,7 @@
 {
     "image_width" : 1920,
     "image_height" : 1080,
+    "samples_per_pixel" : 250,
     "output_path" : "images/bigimage.ppm",
     "world_path" : "sample_world.json"
 }
