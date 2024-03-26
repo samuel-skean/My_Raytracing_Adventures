@@ -1,6 +1,7 @@
 {
     "image_width" : 2560,
     "image_height" : 1664,
+    "samples_per_pixel" : 250,
     "output_path" : "images/background.ppm",
     "world_path" : "sample_world.json"
 }
