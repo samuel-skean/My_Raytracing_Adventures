@@ -204,12 +204,11 @@ fn main() -> io::Result<()> {
     writeln!(output, "{} {}", res.width, res.height)?;
     writeln!(output, "255")?;
 
-    for j in (0..res.height).rev() {
-        eprint!("\rScanlines remaining: {:4}", j + 1);
+    let image = (0..res.height).into_par_iter().map(|j| {
+        let mut rng = rand::thread_rng();
         stderr().flush().unwrap();
 
-        let scanline = (0..res.width).into_par_iter().map(|i| {
-            let mut rng = rand::thread_rng();
+        let scanline = (0..res.width).into_iter().map(|i| {
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
             for _ in 0..config.samples_per_pixel {
                 let random_u_component: f64 = rng.gen();
@@ -227,6 +226,9 @@ fn main() -> io::Result<()> {
             pixel_color
         }).collect::<Vec<Color>>();
 
+        scanline
+    }).collect::<Vec<Vec<Color>>>();
+    for scanline in image.iter().rev() {
         for pixel_color in scanline {
             write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
         }
