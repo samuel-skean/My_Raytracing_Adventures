@@ -23,34 +23,42 @@ fn main() {
 
     let mut rng = ChaCha12Rng::seed_from_u64(options.random_seed);
     for _ in 0..200 {
-        let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
-        let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.6) {
-            Rc::new(Metal::new(rand_color, rng.gen()))
-        } else {
-            Rc::new(Lambertian::new(rand_color))
-        };
-        let sphere = if rng.gen_bool(0.9) {
-            Sphere::new(
-                Point3::new(
-                    rng.gen_range(-2.0..2.0),
-                    rng.gen_range(-0.5..1.0),
-                    rng.gen_range(-2.0..-1.0),
-                ),
-                rng.gen_range(0.0..0.4),
-                rand_mat,
-            )
-        } else {
-            Sphere::new(
-                Point3::new(
-                    rng.gen_range(-50.0..50.0),
-                    rng.gen_range(-50.0..50.0),
-                    rng.gen_range(-50.0..-25.0),
-                ),
-                rng.gen_range(15.0..20.0),
-                rand_mat,
-            )
-        };
-        world.push(Box::new(sphere));
+        'getting_a_good_sphere: loop {
+            let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
+            let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.6) {
+                Rc::new(Metal::new(rand_color, rng.gen()))
+            } else {
+                Rc::new(Lambertian::new(rand_color))
+            };
+            let sphere = if rng.gen_bool(0.9) {
+                Sphere::new(
+                    Point3::new(
+                        rng.gen_range(-2.0..2.0),
+                        rng.gen_range(-0.5..1.0),
+                        rng.gen_range(-2.0..-1.0),
+                    ),
+                    rng.gen_range(0.0..0.4),
+                    rand_mat,
+                )
+            } else {
+                Sphere::new(
+                    Point3::new(
+                        rng.gen_range(-50.0..50.0),
+                        rng.gen_range(-50.0..50.0),
+                        rng.gen_range(-50.0..-25.0),
+                    ),
+                    rng.gen_range(15.0..20.0),
+                    rand_mat,
+                )
+            };
+            for hit in world.iter() {
+                if hit.collides_with_sphere(&sphere) {
+                    continue 'getting_a_good_sphere;
+                }
+            }
+            world.push(Box::new(sphere));
+            break 'getting_a_good_sphere;
+        }
     }
 
     serde_json::to_writer_pretty(std::io::stdout(), &world).expect("Unable to write to standard out.");
