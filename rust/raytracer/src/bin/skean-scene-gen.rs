@@ -27,7 +27,12 @@ fn main() {
         let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.6) {
             Rc::new(Metal::new(rand_color, rng.gen()))
         } else {
-            Rc::new(Lambertian::new(rand_color))
+            if rng.gen_bool(0.8) {
+                let rand_emission = Color::new(rng.gen(), rng.gen(), rng.gen());
+                Rc::new(Lambertian::new_emissive(rand_color, rand_emission))
+            } else {
+                Rc::new(Lambertian::new(rand_color))
+            }
         };
         let sphere = if rng.gen_bool(0.9) {
             Sphere::new(
