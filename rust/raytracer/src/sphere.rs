@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -11,12 +11,12 @@ use super::hit::{Hit, HitRecord};
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    mat: Rc<dyn Scatter>
+    mat: Arc<dyn Scatter>
 }
 
 impl Sphere {
     #[allow(unused)]
-    pub fn new(center: Point3, radius: f64, mat: Rc<dyn Scatter>) -> Sphere {
+    pub fn new(center: Point3, radius: f64, mat: Arc<dyn Scatter>) -> Sphere {
         Sphere {
             center,
             radius,

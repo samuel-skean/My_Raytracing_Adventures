@@ -7,10 +7,10 @@ mod material;
 
 use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Serialize, Deserialize};
-use rand::{Rng, SeedableRng};
+use rand::{rngs::ThreadRng, Rng};
 
-use rand_chacha::ChaCha12Rng;
 use vec::{Vec3, Color};
 use ray::Ray;
 use hit::{Hit, World};
@@ -22,7 +22,7 @@ use camera::Camera;
 // from light blue on the left, through white, and to light blue on the right.
 // Basically, the x stole from the y when it was pointing left and pointing
 // right. This is why the image is pretty :).
-fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut ChaCha12Rng) -> Color {
+fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut ThreadRng) -> Color {
     if depth == 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
@@ -204,12 +204,12 @@ fn main() -> io::Result<()> {
     writeln!(output, "{} {}", res.width, res.height)?;
     writeln!(output, "255")?;
 
-    let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
     for j in (0..res.height).rev() {
         eprint!("\rScanlines remaining: {:4}", j + 1);
         stderr().flush().unwrap();
 
-        for i in 0..res.width {
+        let scanline = (0..res.width).into_par_iter().map(|i| {
+            let mut rng = rand::thread_rng();
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
             for _ in 0..config.samples_per_pixel {
                 let random_u_component: f64 = rng.gen();
@@ -224,6 +224,10 @@ fn main() -> io::Result<()> {
                 pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
             }
 
+            pixel_color
+        }).collect::<Vec<Color>>();
+
+        for pixel_color in scanline {
             write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
         }
         writeln!(output)?;

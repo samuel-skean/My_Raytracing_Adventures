@@ -1,5 +1,5 @@
+use rand::rngs::ThreadRng;
 use rand::Rng;
-use rand_chacha::ChaCha12Rng;
 use serde::{Deserialize, Serialize};
 
 use super::hit::HitRecord;
@@ -7,8 +7,8 @@ use super::ray::Ray;
 use super::vec::{Vec3, Color};
 
 #[typetag::serde(tag = "type")]
-pub trait Scatter {
-    fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
+pub trait Scatter : Send + Sync {
+    fn scatter(&self, rng: &mut ThreadRng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -27,7 +27,7 @@ impl Lambertian {
 
 #[typetag::serde]
 impl Scatter for Lambertian {
-    fn scatter(&self, rng: &mut ChaCha12Rng, _r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
+    fn scatter(&self, rng: &mut ThreadRng, _r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
             // I believe this return tuple should be thought of as "(attenuation, direction)".
 
         //
@@ -83,7 +83,7 @@ impl Metal {
 
 #[typetag::serde]
 impl Scatter for Metal {
-    fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
+    fn scatter(&self, rng: &mut ThreadRng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflection_direction = r_in.direction().reflect(rec.normal).normalized();
             // It seems like we don't really need to renormalize this, even
             // though we aren't keeping it normal. What gives?

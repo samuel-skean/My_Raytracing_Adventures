@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use clap_serde_derive::clap::{self, Parser};
 use rand::{Rng, SeedableRng};
@@ -24,10 +24,10 @@ fn main() {
     let mut rng = ChaCha12Rng::seed_from_u64(options.random_seed);
     for _ in 0..200 {
         let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
-        let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.6) {
-            Rc::new(Metal::new(rand_color, rng.gen()))
+        let rand_mat: Arc<dyn Scatter> = if rng.gen_bool(0.6) {
+            Arc::new(Metal::new(rand_color, rng.gen()))
         } else {
-            Rc::new(Lambertian::new(rand_color))
+            Arc::new(Lambertian::new(rand_color))
         };
         let sphere = if rng.gen_bool(0.9) {
             Sphere::new(
