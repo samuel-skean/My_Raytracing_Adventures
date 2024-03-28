@@ -16,6 +16,8 @@ use ray::Ray;
 use hit::{Hit, World};
 use camera::Camera;
 
+const DEFAULT_NUM_THREADS: u64 = 4;
+
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
 // Because the ray is normalized first, there is a slight horizontal gradient
@@ -80,6 +82,8 @@ struct Config {
     /// Random seed to use throughout the program, mostly for ray bounces.
     #[arg(short = 'R', long)]
     random_seed: u64,
+    #[arg(short = 't', long)]
+    num_threads: u64,
     /// Only required if no config is specified.
     #[arg(required_unless_present("config_path"))]
     world_path: Option<std::path::PathBuf>,
@@ -136,6 +140,7 @@ fn main() -> io::Result<()> {
         max_depth: 5,
         output_path: None,
         random_seed: 0,
+        num_threads: DEFAULT_NUM_THREADS,
         world_path: None,
     };
 
@@ -196,21 +201,28 @@ fn main() -> io::Result<()> {
 
     // Header
     writeln!(output, "P3")?;
-    writeln!(output, "{} {}", res.width, res.height * 4)?;
+    writeln!(output, "{} {}", res.width, res.height)?;
     writeln!(output, "255")?;
 
-    let join_handles = (0..4).map(|thread_num| {
+    let join_handles = (0..config.num_threads).map(|thread_num| {
         let config = config.clone();
         
         thread::spawn(move || {
+            let height_of_portion = res.height / config.num_threads;
+
+            let starting_height = thread_num * height_of_portion;
+            let ending_height = (thread_num + 1) * height_of_portion;
+
+            println!("Starting height: {starting_height}, Ending height: {ending_height}");
+
             // World
             let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap()).unwrap())).unwrap();
 
             // Camera
             let cam = Camera::new(f64::from(aspect_ratio));
             let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-            let image_portion = (0..res.height).rev().map(|j| {
-                eprint!("\rScanlines remaining: {:4}", j + 1);
+            let image_portion = (starting_height..ending_height).rev().map(|j| {
+                eprint!("\rScanlines remaining: {:4}", j + 1 - starting_height);
                 stderr().flush().unwrap();
 
                 let scanline = (0..res.width).map(|i| {
@@ -238,7 +250,7 @@ fn main() -> io::Result<()> {
         })
     }).collect::<Vec<JoinHandle<PixelGrid>>>();
 
-    for scanline in join_handles.into_iter().map(|handle| handle.join().unwrap().concat()) {
+    for scanline in join_handles.into_iter().rev().map(|handle| handle.join().unwrap().concat()) {
         for pixel_color in scanline {
             write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
         }
