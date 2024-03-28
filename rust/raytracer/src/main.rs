@@ -5,7 +5,7 @@ mod sphere;
 mod camera;
 mod material;
 
-use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}};
+use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, thread::{self, JoinHandle}};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
 use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
@@ -51,7 +51,7 @@ struct Cli {
     config: <Config as ClapSerde>::Opt,
 }
 
-#[derive(Debug, Serialize, Deserialize, ClapSerde)]
+#[derive(Debug, Serialize, Deserialize, ClapSerde, Clone)]
 struct Config {
     // NOTE: I am faking all of the default arguments now, since I've
     // implemented my own logic for how they work. It's a shame that everything
@@ -126,6 +126,7 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<f64>, width: Option<u64>
     }
 }
 
+type PixelGrid = Vec<Vec<Color>>;
 fn main() -> io::Result<()> {
     let default_config = Config {
         aspect_ratio: None,
@@ -193,44 +194,51 @@ fn main() -> io::Result<()> {
         // with each other.
     }
 
-    // World
-    let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap())?))?;
-
-    // Camera
-    let cam = Camera::new(f64::from(aspect_ratio));
-
     // Header
     writeln!(output, "P3")?;
-    writeln!(output, "{} {}", res.width, res.height)?;
+    writeln!(output, "{} {}", res.width, res.height * 4)?;
     writeln!(output, "255")?;
 
-    let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-    let image = (0..res.height).rev().map(|j| {
-        eprint!("\rScanlines remaining: {:4}", j + 1);
-        stderr().flush().unwrap();
+    let join_handles = (0..4).map(|thread_num| {
+        let config = config.clone();
+        
+        thread::spawn(move || {
+            // World
+            let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap()).unwrap())).unwrap();
 
-        let scanline = (0..res.width).map(|i| {
-            let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
-            for _ in 0..config.samples_per_pixel {
-                let random_u_component: f64 = rng.gen();
-                let random_v_component: f64 = rng.gen();
+            // Camera
+            let cam = Camera::new(f64::from(aspect_ratio));
+            let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
+            let image_portion = (0..res.height).rev().map(|j| {
+                eprint!("\rScanlines remaining: {:4}", j + 1);
+                stderr().flush().unwrap();
 
-                let u =
-                    ((i as f64) + random_u_component) / ((res.width - 1) as f64);
-                let v =
-                    ((j as f64) + random_v_component) / ((res.height - 1) as f64);
+                let scanline = (0..res.width).map(|i| {
+                    let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
+                    for _ in 0..config.samples_per_pixel {
+                        let random_u_component: f64 = rng.gen();
+                        let random_v_component: f64 = rng.gen();
 
-                let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
-            }
+                        let u =
+                            ((i as f64) + random_u_component) / ((res.width - 1) as f64);
+                        let v =
+                            ((j as f64) + random_v_component) / ((res.height - 1) as f64);
 
-            pixel_color
-        }).collect::<Vec<Color>>();
+                        let r = cam.get_ray(u, v);
+                        pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
+                    }
 
-        scanline
-    });
+                    pixel_color
+                }).collect::<Vec<Color>>();
 
-    for scanline in image {
+                scanline
+            }).collect::<PixelGrid>();
+
+            image_portion
+        })
+    }).collect::<Vec<JoinHandle<PixelGrid>>>();
+
+    for scanline in join_handles.into_iter().map(|handle| handle.join().unwrap().concat()) {
         for pixel_color in scanline {
             write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
         }
