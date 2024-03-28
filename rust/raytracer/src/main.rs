@@ -205,11 +205,11 @@ fn main() -> io::Result<()> {
     writeln!(output, "255")?;
 
     let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-    for j in (0..res.height).rev() {
+    let image = (0..res.height).rev().map(|j| {
         eprint!("\rScanlines remaining: {:4}", j + 1);
         stderr().flush().unwrap();
 
-        for i in 0..res.width {
+        let scanline = (0..res.width).map(|i| {
             let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
             for _ in 0..config.samples_per_pixel {
                 let random_u_component: f64 = rng.gen();
@@ -224,10 +224,19 @@ fn main() -> io::Result<()> {
                 pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
             }
 
+            pixel_color
+        }).collect::<Vec<Color>>();
+
+        scanline
+    });
+
+    for scanline in image {
+        for pixel_color in scanline {
             write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
         }
         writeln!(output)?;
     }
+
     eprintln!("\rDone!                          ");
 
     Ok(())
