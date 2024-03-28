@@ -1,0 +1,4 @@
+All 4 normal images, running at the same time (`time (for config in configs/*; do caffeinate cargo run --bin skean-raytracer -- -c $config &; done; wait)`):
+    ( for config in configs/*; do; caffeinate cargo run --bin skean-raytracer -- )  366.68s user 1.98s system 179% cpu 3:25.85 total
+All 4 crazy images, running at the same time (`time (for config in `ls -r configs`; do caffeinate cargo run --bin skean-raytracer -- crazy-scene_world.json -c configs/$config -o crazy-images/${config%_config.json}.ppm &; done; wait)`):
+    ( for config in `ls -r configs`; do; caffeinate cargo run --bin  --  -c  -o  )  2371.20s user 10.77s system 180% cpu 22:01.07 total
