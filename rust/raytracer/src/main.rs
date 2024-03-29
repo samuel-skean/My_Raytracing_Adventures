@@ -16,7 +16,7 @@ use ray::Ray;
 use hit::{Hit, World};
 use camera::Camera;
 
-const DEFAULT_NUM_THREADS: u64 = 4;
+const DEFAULT_NUM_THREADS: u64 = 8;
 
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
@@ -204,7 +204,7 @@ fn main() -> io::Result<()> {
         let config = config.clone();
         
         thread::spawn(move || {
-            
+
             // For more info on ANSI codes:
             // https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
             // TODO: Make the cursor not blink! (Probably by printing the escape
