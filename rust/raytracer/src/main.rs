@@ -199,11 +199,6 @@ fn main() -> io::Result<()> {
     // Camera
     let cam = Camera::new(f64::from(aspect_ratio));
 
-    // Header
-    writeln!(output, "P3")?;
-    writeln!(output, "{} {}", res.width, res.height)?;
-    writeln!(output, "255")?;
-
     let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
     let image = (0..res.height).rev().map(|j| {
         eprint!("\rScanlines remaining: {:4}", j + 1);
@@ -229,6 +224,11 @@ fn main() -> io::Result<()> {
 
         scanline
     });
+
+    // Header
+    writeln!(output, "P3")?;
+    writeln!(output, "{} {}", res.width, res.height)?;
+    writeln!(output, "255")?;
 
     for scanline in image {
         for pixel_color in scanline {
