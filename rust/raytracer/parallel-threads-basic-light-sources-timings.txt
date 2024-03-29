@@ -1,0 +1,6 @@
+Normal:
+    All 4 normal images, sequential, 8 threads (the default number of threads on this version) (`time (for config in configs/*; do caffeinate cargo run -- -c $config; done; wait)`):
+        ( for config in configs/*; do; caffeinate cargo run -- -c $config; done; wait)  1125.88s user 4.69s system 476% cpu 3:57.26 total
+Crazy:
+    All 4 crazy images, sequential, 8 threads (the default number of threads on this version) (`time (for config in `ls -r configs`; do caffeinate cargo run --bin skean-raytracer -- crazy-scene_world.json -c configs/$config -o crazy-images/${config%_config.json}.ppm; done; wait)`)
+        ( for config in `ls -r configs`; do; caffeinate cargo run --bin  --  -c  -o ;)  11580.13s user 48.60s system 649% cpu 29:49.91 total
