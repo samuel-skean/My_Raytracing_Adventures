@@ -199,10 +199,6 @@ fn main() -> io::Result<()> {
         // with each other.
     }
 
-    // Header
-    writeln!(output, "P3")?;
-    writeln!(output, "{} {}", res.width, res.height)?;
-    writeln!(output, "255")?;
 
     let join_handles = (0..config.num_threads).map(|thread_num| {
         let config = config.clone();
@@ -248,7 +244,13 @@ fn main() -> io::Result<()> {
 
             image_portion
         })
+
     }).collect::<Vec<JoinHandle<PixelGrid>>>();
+
+    // Header
+    writeln!(output, "P3")?;
+    writeln!(output, "{} {}", res.width, res.height)?;
+    writeln!(output, "255")?;
 
     for scanline in join_handles.into_iter().rev().map(|handle| handle.join().unwrap().concat()) {
         for pixel_color in scanline {
