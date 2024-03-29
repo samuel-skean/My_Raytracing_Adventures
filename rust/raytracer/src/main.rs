@@ -5,7 +5,7 @@ mod sphere;
 mod camera;
 mod material;
 
-use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}};
+use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, thread::{self, JoinHandle}, time::Duration};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
 use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
@@ -15,6 +15,8 @@ use vec::{Vec3, Color};
 use ray::Ray;
 use hit::{Hit, World};
 use camera::Camera;
+
+const DEFAULT_NUM_THREADS: u64 = 8;
 
 // Gets a color from each ray that forms a gradient when put together in the
 // viewport.
@@ -52,7 +54,7 @@ struct Cli {
     config: <Config as ClapSerde>::Opt,
 }
 
-#[derive(Debug, Serialize, Deserialize, ClapSerde)]
+#[derive(Debug, Serialize, Deserialize, ClapSerde, Clone)]
 struct Config {
     // NOTE: I am faking all of the default arguments now, since I've
     // implemented my own logic for how they work. It's a shame that everything
@@ -81,6 +83,8 @@ struct Config {
     /// Random seed to use throughout the program, mostly for ray bounces.
     #[arg(short = 'R', long)]
     random_seed: u64,
+    #[arg(short = 't', long)]
+    num_threads: u64,
     /// Only required if no config is specified.
     #[arg(required_unless_present("config_path"))]
     world_path: Option<std::path::PathBuf>,
@@ -127,6 +131,7 @@ fn get_aspect_ratio_and_resolution(aspect_ratio: Option<f64>, width: Option<u64>
     }
 }
 
+type PixelGrid = Vec<Vec<Color>>;
 fn main() -> io::Result<()> {
     let default_config = Config {
         aspect_ratio: None,
@@ -136,6 +141,7 @@ fn main() -> io::Result<()> {
         max_depth: 5,
         output_path: None,
         random_seed: 0,
+        num_threads: DEFAULT_NUM_THREADS,
         world_path: None,
     };
 
@@ -194,42 +200,79 @@ fn main() -> io::Result<()> {
         // with each other.
     }
 
-    // World
-    let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap())?))?;
 
-    // Camera
-    let cam = Camera::new(f64::from(aspect_ratio));
+    let join_handles = (0..config.num_threads).map(|thread_num| {
+        let config = config.clone();
+        
+        thread::spawn(move || {
+
+            // For more info on ANSI codes:
+            // https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
+            // TODO: Make the cursor not blink! (Probably by printing the escape
+            // codes before and after the entire duration of the threads). The
+            // escape code listed on the above gist doesn't seem to work on
+            // either macOS Terminal or VSCode's Terminal.
+            let offset_ansi_code = format!("\x1B[{}G", thread_num * 7 + 1);
+            let height_of_portion = res.height / config.num_threads;
+
+            let starting_height = thread_num * height_of_portion;
+            let ending_height = (thread_num + 1) * height_of_portion;
+
+            println!("Thread {thread_num} - Starting height: {starting_height:4}, Ending height: {ending_height:4}");
+            thread::sleep(Duration::from_millis(200));
+
+            // World
+            let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap()).unwrap())).unwrap();
+
+            // Camera
+            let cam = Camera::new(f64::from(aspect_ratio));
+
+            let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
+            let image_portion = (starting_height..ending_height).rev().map(|j| {
+                eprint!("\r{}{:4}", offset_ansi_code, j + 1 - starting_height);
+                stderr().flush().unwrap();
+
+                let scanline = (0..res.width).map(|i| {
+                    let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
+                    for _ in 0..config.samples_per_pixel {
+                        let random_u_component: f64 = rng.gen();
+                        let random_v_component: f64 = rng.gen();
+
+                        let u =
+                            ((i as f64) + random_u_component) / ((res.width - 1) as f64);
+                        let v =
+                            ((j as f64) + random_v_component) / ((res.height - 1) as f64);
+
+                        let r = cam.get_ray(u, v);
+                        pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
+                    }
+
+                    pixel_color
+                }).collect::<Vec<Color>>();
+
+                scanline
+            }).collect::<PixelGrid>();
+
+            eprint!("\r{}Done!", offset_ansi_code);
+
+            image_portion
+        })
+
+    }).collect::<Vec<JoinHandle<PixelGrid>>>();
 
     // Header
     writeln!(output, "P3")?;
     writeln!(output, "{} {}", res.width, res.height)?;
     writeln!(output, "255")?;
 
-    let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-    for j in (0..res.height).rev() {
-        eprint!("\rScanlines remaining: {:4}", j + 1);
-        stderr().flush().unwrap();
-
-        for i in 0..res.width {
-            let mut pixel_color = Vec3::new(0.0, 0.0, 0.0);
-            for _ in 0..config.samples_per_pixel {
-                let random_u_component: f64 = rng.gen();
-                let random_v_component: f64 = rng.gen();
-
-                let u =
-                    ((i as f64) + random_u_component) / ((res.width - 1) as f64);
-                let v =
-                    ((j as f64) + random_v_component) / ((res.height - 1) as f64);
-
-                let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, config.max_depth, &mut rng);
-            }
-
+    for scanline in join_handles.into_iter().rev().map(|handle| handle.join().unwrap().concat()) {
+        for pixel_color in scanline {
             write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
         }
         writeln!(output)?;
     }
-    eprintln!("\rDone!                          ");
+
+    eprintln!(); // Print newline, to keep around final "Done!" messages.
 
     Ok(())
 }

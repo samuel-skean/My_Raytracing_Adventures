@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use super::sphere::Sphere;
+
 use super::material::Scatter;
 use super::vec::{Vec3, Point3};
 use super::ray::Ray;
@@ -33,6 +35,7 @@ impl HitRecord {
 #[typetag::serde(tag = "type")]
 pub trait Hit {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
+    fn collides_with_sphere(&self, other: &Sphere) -> bool;
 }
 
 pub type World = Vec<Box<dyn Hit>>;
@@ -57,5 +60,8 @@ impl Hit for World {
         }
 
         tmp_rec
+    }
+    fn collides_with_sphere(&self, _other: &Sphere) -> bool {
+        unimplemented!("Can't collide world with sphere. How did we get here.")
     }
 }
