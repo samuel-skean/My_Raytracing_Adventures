@@ -13,8 +13,23 @@ use skean_raytracer::{
 #[derive(Parser)]
 struct Cli {
     /// Random seed to use to generate the scene.
-    #[arg(short = 'R', long)]
+    #[arg(short = 'R', long, default_value_t = 0)]
     random_seed: u64,
+    /// Whether or not to allow collision between generated objects.
+    #[arg(short = 'C', long, default_value_t = false)]
+    allow_collision: bool,
+    /// How many spheres to generate.
+    #[arg(short = 'S', long, default_value_t = 200)]
+    num_spheres: u64,
+    /// Probability, between 0 and 1, that a given sphere is metallic. The
+    /// alternative is that it is diffuse.
+    #[arg(short = 'm', long, default_value_t = 0.6)]
+    metallic_probability: f64,
+    /// Probability, between 0 and 1, that a given sphere is small (of radius
+    /// between 0.0 and 0.4). The alternative is that it is large (of radius
+    /// between 15.0 and 20.0).
+    #[arg(short = 's', long, default_value_t = 0.9)]
+    small_sphere_probability: f64,
 }
 
 fn main() {
@@ -22,15 +37,15 @@ fn main() {
     let mut world = World::new();
 
     let mut rng = ChaCha12Rng::seed_from_u64(options.random_seed);
-    for _ in 0..200 {
+    for _ in 0..options.num_spheres {
         'getting_a_good_sphere: loop {
             let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
-            let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(0.6) {
+            let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(options.metallic_probability) {
                 Rc::new(Metal::new(rand_color, rng.gen()))
             } else {
                 Rc::new(Lambertian::new(rand_color))
             };
-            let sphere = if rng.gen_bool(0.9) {
+            let sphere = if rng.gen_bool(options.small_sphere_probability) {
                 Sphere::new(
                     Point3::new(
                         rng.gen_range(-2.0..2.0),
@@ -51,9 +66,11 @@ fn main() {
                     rand_mat,
                 )
             };
-            for hit in world.iter() {
-                if hit.collides_with_sphere(&sphere) {
-                    continue 'getting_a_good_sphere;
+            if !options.allow_collision {
+                for hit in world.iter() {
+                    if hit.collides_with_sphere(&sphere) {
+                        continue 'getting_a_good_sphere;
+                    }
                 }
             }
             world.push(Box::new(sphere));
