@@ -3,4 +3,4 @@ All 4 normal images, sequential (`time (for config in configs/*; do cargo run --
     ( for config in configs/*; do; cargo run --bin skean-raytracer -- -c $config;)  1553.84s user 5.11s system 767% cpu 3:23.01 total
 
 All 4 crazy images, sequential (`time (for config in `ls -r configs`; do caffeinate cargo run --bin skean-raytracer -- crazy-scene_world.json -c configs/$config -o crazy-images/${config%_config.json}.ppm; done)`):
-    ( for config in `ls -r configs`; do; caffeinate cargo run --bin  --  -c  -o ;   3497.36s user 14.27s system 458% cpu 12:45.66 total
+    ( for config in `ls -r configs`; do; caffeinate cargo run --bin  --  -c  -o ;   2966.17s user 6.69s system 463% cpu 10:41.54 total
