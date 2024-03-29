@@ -25,6 +25,10 @@ struct Cli {
     /// alternative is that it is diffuse.
     #[arg(short = 'm', long, default_value_t = 0.6)]
     metallic_probability: f64,
+    // Probability that a diffuse material is emissive. Currently, metallic
+    // materials cannot be emissive.
+    #[arg(short = 'e', long, alias = "ed", default_value_t = 0.8)]
+    emissive_probability_diffuse: f64,
     /// Probability, between 0 and 1, that a given sphere is small (of radius
     /// between 0.0 and 0.4). The alternative is that it is large (of radius
     /// between 15.0 and 20.0).
@@ -43,7 +47,7 @@ fn main() {
             let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(options.metallic_probability) {
                 Rc::new(Metal::new(rand_color, rng.gen()))
             } else {
-                if rng.gen_bool(0.8) {
+                if rng.gen_bool(options.emissive_probability_diffuse) {
                     let rand_emission = Color::new(rng.gen(), rng.gen(), rng.gen());
                     Rc::new(Lambertian::new_emissive(rand_color, rand_emission))
                 } else {
