@@ -5,7 +5,7 @@ mod sphere;
 mod camera;
 mod material;
 
-use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, thread::{self, JoinHandle}};
+use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, thread::{self, JoinHandle}, time::Duration};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
 use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
@@ -204,21 +204,31 @@ fn main() -> io::Result<()> {
         let config = config.clone();
         
         thread::spawn(move || {
+            
+            // For more info on ANSI codes:
+            // https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
+            // TODO: Make the cursor not blink! (Probably by printing the escape
+            // codes before and after the entire duration of the threads). The
+            // escape code listed on the above gist doesn't seem to work on
+            // either macOS Terminal or VSCode's Terminal.
+            let offset_ansi_code = format!("\x1B[{}G", thread_num * 7 + 1);
             let height_of_portion = res.height / config.num_threads;
 
             let starting_height = thread_num * height_of_portion;
             let ending_height = (thread_num + 1) * height_of_portion;
 
-            println!("Starting height: {starting_height}, Ending height: {ending_height}");
+            println!("Thread {thread_num} - Starting height: {starting_height:4}, Ending height: {ending_height:4}");
+            thread::sleep(Duration::from_millis(200));
 
             // World
             let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap()).unwrap())).unwrap();
 
             // Camera
             let cam = Camera::new(f64::from(aspect_ratio));
+
             let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
             let image_portion = (starting_height..ending_height).rev().map(|j| {
-                eprint!("\rScanlines remaining: {:4}", j + 1 - starting_height);
+                eprint!("\r{}{:4}", offset_ansi_code, j + 1 - starting_height);
                 stderr().flush().unwrap();
 
                 let scanline = (0..res.width).map(|i| {
@@ -242,6 +252,8 @@ fn main() -> io::Result<()> {
                 scanline
             }).collect::<PixelGrid>();
 
+            eprint!("\r{}Done!", offset_ansi_code);
+
             image_portion
         })
 
@@ -259,7 +271,7 @@ fn main() -> io::Result<()> {
         writeln!(output)?;
     }
 
-    eprintln!("\rDone!                          ");
+    eprintln!(); // Print newline, to keep around final "Done!" messages.
 
     Ok(())
 }
