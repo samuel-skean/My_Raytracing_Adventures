@@ -57,4 +57,8 @@ impl Hit for Sphere {
 
         Some(rec)
     }
+
+    fn collides_with_sphere(&self, other: &Sphere) -> bool {
+        (self.center - other.center).length() < (self.radius + other.radius)
+    }
 }
