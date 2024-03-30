@@ -8,39 +8,26 @@ use super::vec::{Vec3, Color};
 
 #[typetag::serde(tag = "type")]
 pub trait Scatter {
-    // TODO: Should the emission be a property of the material (Scatter), or
-    // somehow HitRecord (and therefore, I guess, the shape (Hit))?
-    fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Color, Ray)>;
+    fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Lambertian {
-    albedo: Color,
-    #[serde(default)]
-    emission: Color,
+    albedo: Color
 }
 
 impl Lambertian {
     #[allow(unused)]
     pub fn new(albedo: Color) -> Lambertian {
         Lambertian {
-            albedo,
-            emission: Color::new(0.0, 0.0, 0.0),
-        }
-    }
-
-    #[allow(unused)]
-    pub fn new_emissive(albedo: Color, emission: Color) -> Lambertian {
-        Lambertian {
-            albedo,
-            emission,
+            albedo
         }
     }
 }
 
 #[typetag::serde]
 impl Scatter for Lambertian {
-    fn scatter(&self, rng: &mut ChaCha12Rng, _r_in: &Ray, rec: &HitRecord) -> Option<(Color, Color, Ray)> {
+    fn scatter(&self, rng: &mut ChaCha12Rng, _r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
             // I believe this return tuple should be thought of as "(attenuation, direction)".
 
         //
@@ -74,7 +61,7 @@ impl Scatter for Lambertian {
         }
         let scattered = Ray::new(rec.p, scatter_direction);
 
-        Some((self.albedo, self.emission, scattered))
+        Some((self.albedo, scattered))
     }
 }
 
@@ -96,13 +83,13 @@ impl Metal {
 
 #[typetag::serde]
 impl Scatter for Metal {
-    fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Color, Ray)> {
+    fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflection_direction = r_in.direction().reflect(rec.normal).normalized();
             // It seems like we don't really need to renormalize this, even
             // though we aren't keeping it normal. What gives?
         let scattered = Ray::new(rec.p, reflection_direction + self.fuzz * Vec3::random_in_unit_sphere(rng));
         if scattered.direction().dot(rec.normal) > 0.0 {
-            Some((self.albedo, Color::new(0.0, 0.0, 0.0), scattered))
+            Some((self.albedo, scattered))
         } else {
             // Now, since we're adding a random perturbation to the direction of
             // our reflected ray, we need to handle this case because we might have

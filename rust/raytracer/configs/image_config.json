@@ -1,5 +1,4 @@
 {
-    "samples_per_pixel" : 250,
     "output_path" : "images/image.ppm",
     "world_path" : "sample_world.json"
 }
