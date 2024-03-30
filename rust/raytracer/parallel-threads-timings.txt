@@ -1,3 +1,4 @@
+All images described here came from configs in the old_configs folder.
 Normal:
     All 4 normal images, sequential, 4 threads (`time (for config in configs/*; do caffeinate cargo run --bin skean-raytracer -- -c $config -t 4; done; wait)`):
         ( for config in configs/*; do; caffeinate cargo run --bin skean-raytracer -- )  371.81s user 1.29s system 264% cpu 2:21.23 total
