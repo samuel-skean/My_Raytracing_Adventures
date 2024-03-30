@@ -30,17 +30,16 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut ChaCha12Rng) -> Color
     }
 
     if let Some(rec) = world.hit(r, 0.001, f64::INFINITY) {
-        if let Some((attenuation, emission, scattered)) = rec.mat.scatter(rng, r, &rec) {
-            emission + attenuation * ray_color(&scattered, world, depth - 1, rng)
+        if let Some((attenuation, scattered)) = rec.mat.scatter(rng, r, &rec) {
+            attenuation * ray_color(&scattered, world, depth - 1, rng)
         }
         else {
             Color::new(0.0, 0.0, 0.0)
         }
     } else {
-        Color::new(0.0, 0.0, 0.0)
-        // let unit_direction = r.direction().normalized();
-        // let t = 0.5 * (unit_direction.y() + 1.0);
-        // (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+        let unit_direction = r.direction().normalized();
+        let t = 0.5 * (unit_direction.y() + 1.0);
+        (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
     }
 }
 
