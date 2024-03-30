@@ -1,3 +1,4 @@
+All images described here came from configs in the old_configs folder.
 Old, with 250 samples:
 Normal:
     All 4 normal images, sequential, 8 threads (the default number of threads on this version) (`time (for config in configs/*; do caffeinate cargo run -- -c $config; done; wait)`):
