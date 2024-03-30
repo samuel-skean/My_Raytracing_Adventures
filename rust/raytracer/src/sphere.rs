@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 
-use super::material::Scatter;
+use super::material::Material;
 use super::vec::Point3;
 use super::ray::Ray;
 use super::hit::{Hit, HitRecord};
@@ -11,12 +11,12 @@ use super::hit::{Hit, HitRecord};
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    mat: Rc<dyn Scatter>
+    mat: Rc<dyn Material>
 }
 
 impl Sphere {
     #[allow(unused)]
-    pub fn new(center: Point3, radius: f64, mat: Rc<dyn Scatter>) -> Sphere {
+    pub fn new(center: Point3, radius: f64, mat: Rc<dyn Material>) -> Sphere {
         Sphere {
             center,
             radius,
