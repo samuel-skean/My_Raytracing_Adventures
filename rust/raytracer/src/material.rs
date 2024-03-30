@@ -11,16 +11,35 @@ pub trait Scatter {
     fn scatter(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
 }
 
+#[typetag::serde(tag = "type")]
+pub trait Emit {
+    fn emit(&self, rng: &mut ChaCha12Rng, r_in: &Ray, rec: &HitRecord) -> Color;
+}
+
+#[typetag::serde(tag = "type")]
+pub trait Material : Scatter + Emit {}
+
 #[derive(Serialize, Deserialize)]
 pub struct Lambertian {
-    albedo: Color
+    albedo: Color,
+    #[serde(default)]
+    emission: Color
 }
 
 impl Lambertian {
     #[allow(unused)]
     pub fn new(albedo: Color) -> Lambertian {
         Lambertian {
-            albedo
+            albedo,
+            emission: Color::new(0.0, 0.0, 0.0),
+        }
+    }
+
+    #[allow(unused)]
+    pub fn new_emissive(albedo: Color, emission: Color) -> Lambertian {
+        Lambertian {
+            albedo,
+            emission,
         }
     }
 }
@@ -65,6 +84,16 @@ impl Scatter for Lambertian {
     }
 }
 
+#[typetag::serde]
+impl Emit for Lambertian {
+    fn emit(&self, _rng: &mut ChaCha12Rng, _r_in: &Ray, _rec: &HitRecord) -> Color {
+        self.emission
+    }
+}
+
+#[typetag::serde]
+impl Material for Lambertian {}
+
 #[derive(Serialize, Deserialize)]
 pub struct Metal {
     albedo: Color,
@@ -98,3 +127,13 @@ impl Scatter for Metal {
         }
     }
 }
+
+#[typetag::serde]
+impl Emit for Metal {
+    fn emit(&self, _rng: &mut ChaCha12Rng, _r_in: &Ray, _rec: &HitRecord) -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
+}
+
+#[typetag::serde]
+impl Material for Metal {}

@@ -5,7 +5,7 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha12Rng;
 use skean_raytracer::{
     hit::World,
-    material::{Lambertian, Metal, Scatter},
+    material::{Lambertian, Material, Metal},
     sphere::Sphere,
     vec::{Color, Point3},
 };
@@ -44,7 +44,7 @@ fn main() {
     for _ in 0..options.num_spheres {
         'getting_a_good_sphere: loop {
             let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
-            let rand_mat: Rc<dyn Scatter> = if rng.gen_bool(options.metallic_probability) {
+            let rand_mat: Rc<dyn Material> = if rng.gen_bool(options.metallic_probability) {
                 Rc::new(Metal::new(rand_color, rng.gen()))
             } else {
                 if rng.gen_bool(options.emissive_probability_diffuse) {
