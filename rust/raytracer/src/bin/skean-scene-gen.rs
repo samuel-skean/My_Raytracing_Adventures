@@ -4,10 +4,7 @@ use clap_serde_derive::clap::{self, Parser};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha12Rng;
 use skean_raytracer::{
-    hit::World,
-    material::{Lambertian, Material, Metal},
-    sphere::Sphere,
-    vec::{Color, Point3},
+    hit::World, material::{Lambertian, Material, Metal}, plane::Plane, sphere::Sphere, vec::{Color, Point3, Vec3}
 };
 
 #[derive(Parser)]
@@ -21,7 +18,10 @@ struct Cli {
     /// How many spheres to generate.
     #[arg(short = 'S', long, default_value_t = 200)]
     num_spheres: u64,
-    /// Probability, between 0 and 1, that a given sphere is metallic. The
+    /// How many planes to generate.
+    #[arg(short = 'P', long, default_value_t = 1)]
+    num_planes: u64,
+    /// Probability, between 0 and 1, that a given object is metallic. The
     /// alternative is that it is diffuse.
     #[arg(short = 'm', long, default_value_t = 0.6)]
     metallic_probability: f64,
@@ -38,29 +38,39 @@ struct Cli {
     small_sphere_probability: f64,
 }
 
+fn gen_material(options: &Cli, rng: &mut impl Rng) -> Rc<dyn Material> {
+    let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
+    let rand_mat: Rc<dyn Material> = if rng.gen_bool(options.metallic_probability) {
+        if rng.gen_bool(options.emissive_probability_metallic) {
+            let rand_emission = Color::new(rng.gen(), rng.gen(), rng.gen());
+            Rc::new(Metal::new_emissive(rand_color, rng.gen(), rand_emission))
+        } else {
+            Rc::new(Metal::new(rand_color, rng.gen()))
+        }
+    } else {
+        if rng.gen_bool(options.emissive_probability_diffuse) {
+            let rand_emission = Color::new(rng.gen(), rng.gen(), rng.gen());
+            Rc::new(Lambertian::new_emissive(rand_color, rand_emission))
+        } else {
+            Rc::new(Lambertian::new(rand_color))
+        }
+    };
+
+    rand_mat
+}
+
 fn main() {
+
+    // TODO: There's gotta be a cleaner way to do this!! With less redundant code between things.
+    
     let options = Cli::parse();
     let mut world = World::new();
 
     let mut rng = ChaCha12Rng::seed_from_u64(options.random_seed);
     for _ in 0..options.num_spheres {
         'getting_a_good_sphere: loop {
-            let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
-            let rand_mat: Rc<dyn Material> = if rng.gen_bool(options.metallic_probability) {
-                if rng.gen_bool(options.emissive_probability_metallic) {
-                    let rand_emission = Color::new(rng.gen(), rng.gen(), rng.gen());
-                    Rc::new(Metal::new_emissive(rand_color, rng.gen(), rand_emission))
-                } else {
-                    Rc::new(Metal::new(rand_color, rng.gen()))
-                }
-            } else {
-                if rng.gen_bool(options.emissive_probability_diffuse) {
-                    let rand_emission = Color::new(rng.gen(), rng.gen(), rng.gen());
-                    Rc::new(Lambertian::new_emissive(rand_color, rand_emission))
-                } else {
-                    Rc::new(Lambertian::new(rand_color))
-                }
-            };
+            let rand_mat = gen_material(&options, &mut rng);
+
             let sphere = if rng.gen_bool(options.small_sphere_probability) {
                 Sphere::new(
                     Point3::new(
@@ -92,6 +102,25 @@ fn main() {
             world.push(Box::new(sphere));
             break 'getting_a_good_sphere;
         }
+    }
+
+    for _ in 0..options.num_planes {
+        let rand_mat = gen_material(&options, &mut rng);
+
+        let plane = Plane::new(
+            Point3::new(
+                rng.gen_range(-50.0..50.0),
+                rng.gen_range(-50.0..50.0),
+                rng.gen_range(-50.0..-25.0),
+            ),
+            Vec3::new(
+                rng.gen_range(-50.0..50.0),
+                rng.gen_range(-50.0..50.0),
+                rng.gen_range(-50.0..-25.0),
+            ),
+            rand_mat,
+        );
+        world.push(Box::new(plane));
     }
 
     serde_json::to_writer_pretty(std::io::stdout(), &world).expect("Unable to write to standard out.");
