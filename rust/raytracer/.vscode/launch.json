@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": ["-c", "configs/background_config.json"],
             "cwd": "${workspaceFolder}"
         },
         {
