@@ -4,6 +4,7 @@ mod hit;
 mod sphere;
 mod camera;
 mod material;
+mod plane;
 
 use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, thread::{self, JoinHandle}, time::Duration};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
@@ -37,10 +38,10 @@ fn ray_color(r: &Ray, world: &World, depth: u64, rng: &mut ChaCha12Rng) -> Color
             Color::new(0.0, 0.0, 0.0)
         }
     } else {
-        Color::new(0.0, 0.0, 0.0)
-        // let unit_direction = r.direction().normalized();
-        // let t = 0.5 * (unit_direction.y() + 1.0);
-        // (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+        // Color::new(0.0, 0.0, 0.0)
+        let unit_direction = r.direction().normalized();
+        let t = 0.5 * (unit_direction.y() + 1.0);
+        (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
     }
 }
 
