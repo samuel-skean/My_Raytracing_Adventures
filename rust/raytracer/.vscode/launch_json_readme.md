@@ -5,3 +5,6 @@ I tried using the launch.json file here to debug on macOS in VSCode using CodeLL
 This launch.json file should be *very close* to the default. The only difference I know of is that I added arguments so it could actually run the binary I gave it, on line 22. That change seemed to work, at least.
 
 I don't know, but I'm next gonna try rust-gdb on linux. I would try it on macOS, but I still really don't want to use brew or whatever, and I'm not quite ready to use the nix package manager yet.
+
+Me from later: Turns out *this* JSON (launch.json) does support comments, and I
+just wasn't outputting debug info in the dev profile. Whoops. Fixed now.
