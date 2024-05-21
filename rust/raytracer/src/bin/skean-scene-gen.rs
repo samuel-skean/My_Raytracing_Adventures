@@ -19,7 +19,7 @@ struct Cli {
     #[arg(short = 'S', long, default_value_t = 200)]
     num_spheres: u64,
     /// How many planes to generate.
-    #[arg(short = 'P', long, default_value_t = 1)]
+    #[arg(short = 'P', long, default_value_t = 5)]
     num_planes: u64,
     /// Probability, between 0 and 1, that a given object is metallic. The
     /// alternative is that it is diffuse.

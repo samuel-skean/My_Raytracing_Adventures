@@ -36,22 +36,19 @@ impl Plane {
 impl Hit for Plane {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let denominator = Vec3::dot(self.normal, r.direction());
-        if denominator < t_min || denominator > t_max {
+        if denominator == 0.0 {
             return None;
         }
 
         let t = Vec3::dot(self.normal, self.any_point - r.origin()) / denominator;
 
+        if t < t_min || t > t_max {
+            return None;
+        }
+
         let p = r.at(t);
 
-        let rec = HitRecord {
-            p,
-            normal: self.normal,
-            mat: Rc::clone(&self.mat),
-            t,
-            front_face: false
-        };
-        // HitRecord::with_normal_against_ray(p, t, r, self.normal, Rc::clone(&self.mat));
+        let rec = HitRecord::with_normal_against_ray(p, t, r, self.normal, Rc::clone(&self.mat));
 
         Some(rec)
     }
