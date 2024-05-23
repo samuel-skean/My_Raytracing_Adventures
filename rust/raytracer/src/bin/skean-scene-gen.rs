@@ -126,9 +126,8 @@ fn main() {
     }
 
     let world = World::new(world_objects);
-
-    // TODO: Use serde_json::to_value to add the extra data we want to store, namely the passed in arguments.
-    let mut world = serde_json::to_value(world).unwrap();
+    // Use serde_json::to_value to add the extra data we want to store, namely
+    // the passed in arguments.
     world["provenance"] = json!({
         "auto_generated": true,
         "tool": env!("CARGO_BIN_NAME"),
