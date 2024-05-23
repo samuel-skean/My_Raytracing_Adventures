@@ -1,10 +1,4 @@
-mod vec;
-mod ray;
-mod hit;
-mod sphere;
-mod camera;
-mod material;
-mod plane;
+use skean_raytracer::*;
 
 use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, thread::{self, JoinHandle}, time::Duration};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};

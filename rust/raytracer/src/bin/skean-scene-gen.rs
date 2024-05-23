@@ -3,11 +3,13 @@ use std::rc::Rc;
 use clap_serde_derive::clap::{self, Parser};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha12Rng;
+use serde::Serialize;
+use serde_json::json;
 use skean_raytracer::{
-    hit::World, material::{Lambertian, Material, Metal}, plane::Plane, sphere::Sphere, vec::{Color, Point3, Vec3}
+    hit::{Hit, World}, material::{Lambertian, Material, Metal}, plane::Plane, sphere::Sphere, vec::{Color, Point3, Vec3}
 };
 
-#[derive(Parser)]
+#[derive(Parser, Serialize)]
 struct Cli {
     /// Random seed to use to generate the scene.
     #[arg(short = 'R', long, default_value_t = 0)]
@@ -64,7 +66,7 @@ fn main() {
     // TODO: There's gotta be a cleaner way to do this!! With less redundant code between things.
     
     let options = Cli::parse();
-    let mut world = World::new();
+    let mut world_objects = Vec::<Box<dyn Hit>>::new();
 
     let mut rng = ChaCha12Rng::seed_from_u64(options.random_seed);
     for _ in 0..options.num_spheres {
@@ -93,13 +95,13 @@ fn main() {
                 )
             };
             if !options.allow_collision {
-                for hit in world.iter() {
-                    if hit.collides_with_sphere(&sphere) {
+                for object in world_objects.iter() {
+                    if object.collides_with_sphere(&sphere) {
                         continue 'getting_a_good_sphere;
                     }
                 }
             }
-            world.push(Box::new(sphere));
+            world_objects.push(Box::new(sphere));
             break 'getting_a_good_sphere;
         }
     }
@@ -120,8 +122,20 @@ fn main() {
             ),
             rand_mat,
         );
-        world.push(Box::new(plane));
+        world_objects.push(Box::new(plane));
     }
+
+    let world = World::new(world_objects);
+
+    // TODO: Use serde_json::to_value to add the extra data we want to store, namely the passed in arguments.
+    let mut world = serde_json::to_value(world).unwrap();
+    world["provenance"] = json!({
+        "auto_generated": true,
+        "tool": env!("CARGO_BIN_NAME"),
+        "git_commit_hash": env!("VERGEN_GIT_SHA"),
+        "git_dirty_tree_not_considering_untracked_files": env!("VERGEN_GIT_DIRTY").parse::<bool>().unwrap(),
+        "options": options,
+    });
 
     serde_json::to_writer_pretty(std::io::stdout(), &world).expect("Unable to write to standard out.");
 }
