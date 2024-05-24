@@ -1,4 +1,4 @@
-use skean_raytracer::*;
+use skean_raytracer::{world_format::WorldInfo, *};
 
 use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, thread::{self, JoinHandle}, time::Duration};
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
@@ -217,7 +217,11 @@ fn main() -> io::Result<()> {
             thread::sleep(Duration::from_millis(200));
 
             // World
-            let world = serde_json::from_reader(BufReader::new(File::open(config.world_path.unwrap()).unwrap())).unwrap();
+            let world = serde_json::from_reader::<_, WorldInfo>(
+                    BufReader::new(File::open(config.world_path.unwrap()).unwrap())
+                )
+                .unwrap()
+                .validate();
 
             // Camera
             let cam = Camera::new(f64::from(aspect_ratio));

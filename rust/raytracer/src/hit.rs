@@ -1,7 +1,5 @@
 use std::rc::Rc;
 
-use serde::{Deserialize, Serialize};
-
 use super::sphere::Sphere;
 
 use super::material::Material;
@@ -40,21 +38,10 @@ pub trait Hit {
     fn collides_with_sphere(&self, other: &Sphere) -> bool;
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct World {
-    version: String,
-    objects: Vec<Box<dyn Hit>>,
-}
-
-impl World {
-    #[allow(unused)]
-    pub fn new(objects: Vec<Box<dyn Hit>>) -> Self {
-        World {
-            version: env!("CARGO_PKG_VERSION").into(),
-            objects,
-        }
-    }
-}
+pub type World = Vec<Box<dyn Hit>>;
+    // impl's and clean type aliases do reduce boilerplate a lot here
+    // I kinda wish I could safely inherit from this type,
+    // making this a new type but still with all those methods.
 
 #[typetag::serde]
 impl Hit for World {
@@ -63,7 +50,7 @@ impl Hit for World {
 
         let mut closest_so_far = t_max;
 
-        for object in &self.objects {
+        for object in self {
             if let Some(rec) = object.hit(r, t_min, closest_so_far) {
                     // Using closest_so_far as t_max makes sure we only get hits that are
                     // closer than all the things this ray has hit so far.

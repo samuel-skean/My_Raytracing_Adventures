@@ -1,5 +1,5 @@
 {
-  "objects": [
+  "world": [
     {
       "type": "Sphere",
       "center": {

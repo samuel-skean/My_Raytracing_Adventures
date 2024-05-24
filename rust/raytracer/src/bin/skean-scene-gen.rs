@@ -6,7 +6,7 @@ use rand_chacha::ChaCha12Rng;
 use serde::Serialize;
 use serde_json::json;
 use skean_raytracer::{
-    hit::{Hit, World}, material::{Lambertian, Material, Metal}, plane::Plane, sphere::Sphere, vec::{Color, Point3, Vec3}
+    hit::Hit, material::{Lambertian, Material, Metal}, plane::Plane, sphere::Sphere, vec::{Color, Point3, Vec3}, world_format::WorldInfo
 };
 
 #[derive(Parser, Serialize)]
@@ -66,7 +66,7 @@ fn main() {
     // TODO: There's gotta be a cleaner way to do this!! With less redundant code between things.
     
     let options = Cli::parse();
-    let mut world_objects = Vec::<Box<dyn Hit>>::new();
+    let mut world = Vec::<Box<dyn Hit>>::new();
 
     let mut rng = ChaCha12Rng::seed_from_u64(options.random_seed);
     for _ in 0..options.num_spheres {
@@ -95,13 +95,13 @@ fn main() {
                 )
             };
             if !options.allow_collision {
-                for object in world_objects.iter() {
+                for object in world.iter() {
                     if object.collides_with_sphere(&sphere) {
                         continue 'getting_a_good_sphere;
                     }
                 }
             }
-            world_objects.push(Box::new(sphere));
+            world.push(Box::new(sphere));
             break 'getting_a_good_sphere;
         }
     }
@@ -122,13 +122,13 @@ fn main() {
             ),
             rand_mat,
         );
-        world_objects.push(Box::new(plane));
+        world.push(Box::new(plane));
     }
 
-    let world = World::new(world_objects);
     // Use serde_json::to_value to add the extra data we want to store, namely
     // the passed in arguments.
-    world["provenance"] = json!({
+    let mut world_info = serde_json::to_value(WorldInfo::new(world)).unwrap();
+    world_info["provenance"] = json!({
         "auto_generated": true,
         "tool": env!("CARGO_BIN_NAME"),
         "git_commit_hash": env!("VERGEN_GIT_SHA"),
@@ -136,5 +136,5 @@ fn main() {
         "options": options,
     });
 
-    serde_json::to_writer_pretty(std::io::stdout(), &world).expect("Unable to write to standard out.");
+    serde_json::to_writer_pretty(std::io::stdout(), &world_info).expect("Unable to write to standard out.");
 }

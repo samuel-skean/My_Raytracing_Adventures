@@ -1,5 +1,22 @@
 {
-  "objects": [
+  "provenance": {
+    "auto_generated": true,
+    "git_commit_hash": "ccd0171ec12a761a2c82db0b487b2a127f323c45",
+    "git_dirty_tree_not_considering_untracked_files": true,
+    "options": {
+      "allow_collision": false,
+      "emissive_probability_diffuse": 0.8,
+      "emissive_probability_metallic": 0.2,
+      "metallic_probability": 0.6,
+      "num_planes": 5,
+      "num_spheres": 200,
+      "random_seed": 0,
+      "small_sphere_probability": 0.9
+    },
+    "tool": "skean-scene-gen"
+  },
+  "version": "0.1.0",
+  "world": [
     {
       "center": {
         "e": [
@@ -5893,22 +5910,5 @@
       },
       "type": "Plane"
     }
-  ],
-  "provenance": {
-    "auto_generated": true,
-    "git_commit_hash": "d34dfecafd02b807f49aae18cce8c9223a50a30a",
-    "git_dirty_tree_not_considering_untracked_files": true,
-    "options": {
-      "allow_collision": false,
-      "emissive_probability_diffuse": 0.8,
-      "emissive_probability_metallic": 0.2,
-      "metallic_probability": 0.6,
-      "num_planes": 5,
-      "num_spheres": 200,
-      "random_seed": 0,
-      "small_sphere_probability": 0.9
-    },
-    "tool": "skean-scene-gen"
-  },
-  "version": "0.1.0"
+  ]
 }
