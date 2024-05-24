@@ -1,6 +1,6 @@
 [package]
 name = "skean-raytracer"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 default-run = "skean-raytracer"
 
@@ -19,7 +19,7 @@ debug-assertions = true # These would be nice in this profile, if I ever add som
 overflow-checks = true # Please don't give me overflow errors.
 lto = false
 panic = 'unwind'
-incremental = false
+incremental = true
 codegen-units = 16
 rpath = false
 
