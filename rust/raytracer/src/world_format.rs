@@ -19,7 +19,7 @@ impl WorldInfo {
 
     pub fn validate(self) -> World {
         let version_requirement =
-            VersionReq::parse("0.1.0").expect("Unable to parse baked-in version requirement.");
+            VersionReq::parse("0.1.*").expect("Unable to parse baked-in version requirement.");
         if version_requirement.matches(&Version::parse(self.version.as_str()).expect(format!(
             "The world file reports a version of {}, which is not a valid version.",
             self.version
