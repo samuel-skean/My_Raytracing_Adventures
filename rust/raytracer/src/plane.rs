@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -18,12 +18,12 @@ use super::vec::{Point3, Vec3};
 pub struct Plane {
     any_point: Point3,
     normal: Vec3,
-    mat: Rc<dyn Material>,
+    mat: Arc<dyn Material>,
 }
 
 impl Plane {
     #[allow(unused)]
-    pub fn new(any_point: Point3, normal: Vec3, mat: Rc<dyn Material>) -> Plane {
+    pub fn new(any_point: Point3, normal: Vec3, mat: Arc<dyn Material>) -> Plane {
         Plane {
             any_point,
             normal,
@@ -48,7 +48,7 @@ impl Hit for Plane {
 
         let p = r.at(t);
 
-        let rec = HitRecord::with_normal_against_ray(p, t, r, self.normal, Rc::clone(&self.mat));
+        let rec = HitRecord::with_normal_against_ray(p, t, r, self.normal, Arc::clone(&self.mat));
 
         Some(rec)
     }

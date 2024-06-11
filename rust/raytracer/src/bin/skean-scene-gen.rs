@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use clap_serde_derive::clap::{self, Parser};
 use rand::{Rng, SeedableRng};
@@ -38,21 +38,21 @@ struct Cli {
     small_sphere_probability: f64,
 }
 
-fn gen_material(options: &Cli, rng: &mut impl Rng) -> Rc<dyn Material> {
+fn gen_material(options: &Cli, rng: &mut impl Rng) -> Arc<dyn Material> {
     let rand_color = Color::new(rng.gen(), rng.gen(), rng.gen());
-    let rand_mat: Rc<dyn Material> = if rng.gen_bool(options.metallic_probability) {
+    let rand_mat: Arc<dyn Material> = if rng.gen_bool(options.metallic_probability) {
         if rng.gen_bool(options.emissive_probability_metallic) {
             let rand_emission = Color::new(rng.gen(), rng.gen(), rng.gen());
-            Rc::new(Metal::new_emissive(rand_color, rng.gen(), rand_emission))
+            Arc::new(Metal::new_emissive(rand_color, rng.gen(), rand_emission))
         } else {
-            Rc::new(Metal::new(rand_color, rng.gen()))
+            Arc::new(Metal::new(rand_color, rng.gen()))
         }
     } else {
         if rng.gen_bool(options.emissive_probability_diffuse) {
             let rand_emission = Color::new(rng.gen(), rng.gen(), rng.gen());
-            Rc::new(Lambertian::new_emissive(rand_color, rand_emission))
+            Arc::new(Lambertian::new_emissive(rand_color, rand_emission))
         } else {
-            Rc::new(Lambertian::new(rand_color))
+            Arc::new(Lambertian::new(rand_color))
         }
     };
 

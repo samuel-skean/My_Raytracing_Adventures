@@ -1,5 +1,5 @@
-use std::rc::Rc;
 
+use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use super::material::Material;
@@ -11,12 +11,12 @@ use super::hit::{Hit, HitRecord};
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    mat: Rc<dyn Material>
+    mat: Arc<dyn Material>
 }
 
 impl Sphere {
     #[allow(unused)]
-    pub fn new(center: Point3, radius: f64, mat: Rc<dyn Material>) -> Sphere {
+    pub fn new(center: Point3, radius: f64, mat: Arc<dyn Material>) -> Sphere {
         Sphere {
             center,
             radius,

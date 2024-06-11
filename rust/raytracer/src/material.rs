@@ -17,7 +17,7 @@ pub trait Emit {
 }
 
 #[typetag::serde(tag = "type")]
-pub trait Material : Scatter + Emit {}
+pub trait Material : Sync + Send + Scatter + Emit {}
 
 #[derive(Serialize, Deserialize)]
 pub struct Lambertian {

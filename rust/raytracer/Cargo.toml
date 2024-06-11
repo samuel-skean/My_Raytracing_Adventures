@@ -25,6 +25,8 @@ rpath = false
 
 
 [dependencies]
+atomic = { version = "0.6.0", default-features = false }
+bytemuck = { version = "1.16.0", features = ["derive"] }
 clap-serde-derive = "0.2.1"
 rand = "0.8.*"
 rand_chacha = "0.3.*"
