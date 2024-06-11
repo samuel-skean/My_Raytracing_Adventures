@@ -5,10 +5,12 @@ mod sphere;
 mod camera;
 mod material;
 mod plane;
+mod gui;
 
 use std::{fs::File, io::{self, stderr, BufReader, BufWriter, Write}, thread, time::Duration};
 use atomic::Atomic;
 use clap_serde_derive::{clap::{self, error::ErrorKind, CommandFactory as _, Parser}, ClapSerde};
+use gui::run_gui;
 use serde::{Serialize, Deserialize};
 use rand::{Rng, SeedableRng};
 
@@ -92,6 +94,7 @@ struct Config {
     world_path: Option<std::path::PathBuf>,
 }
 
+#[derive(Clone, Copy)]
 struct Resolution {
     width: usize,
     height: usize,
@@ -201,7 +204,7 @@ fn main() -> io::Result<()> {
             if extension != "ppm" {
                 extension_error()
             }
-            Box::new(BufWriter::new(File::create(output_path)?))
+            Box::new(BufWriter::new(File::create(output_path).unwrap()))
         }
     };
 
@@ -255,7 +258,7 @@ fn main() -> io::Result<()> {
                 thread::sleep(Duration::from_millis(200));
     
                 let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-                for j in (starting_height..ending_height).rev() {
+                for j in starting_height..ending_height {
                     eprint!("\r{}{:4}", offset_ansi_code, j + 1 - starting_height);
                     stderr().flush().unwrap();
 
@@ -267,12 +270,12 @@ fn main() -> io::Result<()> {
                             let u =
                                 ((i as f64) + random_u_component) / ((res.width - 1) as f64);
                             let v =
-                                ((j as f64) + random_v_component) / ((res.height - 1) as f64);
+                                (((res.height - j) as f64) + random_v_component) / ((res.height - 1) as f64);
     
                             let r = cam.get_ray(u, v);
-                            let old_pixel_info = image[i][j].load(atomic::Ordering::Acquire);
+                            let old_pixel_info = image[j][i].load(atomic::Ordering::Acquire);
                             let accumulated_color = old_pixel_info.accumulated_color + ray_color(&r, &world, config.max_depth, &mut rng);
-                            image[i][j].store(PixelInfo { accumulated_color, samples_so_far: old_pixel_info.samples_so_far + 1 }, atomic::Ordering::Release);
+                            image[j][i].store(PixelInfo { accumulated_color, samples_so_far: old_pixel_info.samples_so_far + 1 }, atomic::Ordering::Release);
                         }
                     }
                 }
@@ -280,6 +283,8 @@ fn main() -> io::Result<()> {
                 eprint!("\r{}Done!", offset_ansi_code);
             });
         }
+
+        run_gui(&image, res);
     });
 
     // Header
@@ -287,12 +292,13 @@ fn main() -> io::Result<()> {
     writeln!(output, "{} {}", res.width, res.height)?;
     writeln!(output, "255")?;
 
-    // for scanline in join_handles.into_iter().rev().map(|handle| handle.join().unwrap().concat()) {
-    //     for pixel_color in scanline {
-    //         write!(output, "{} ", pixel_color.format_color(config.samples_per_pixel))?;
-    //     }
-    //     writeln!(output)?;
-    // }
+    for scanline in image.iter() {
+        for pixel_color in scanline {
+            write!(output, "{} ", pixel_color.load(atomic::Ordering::Acquire)
+                .accumulated_color.format_color(config.samples_per_pixel))?;
+        }
+        writeln!(output)?;
+    }
 
     eprintln!(); // Print newline, to keep around final "Done!" messages.
 

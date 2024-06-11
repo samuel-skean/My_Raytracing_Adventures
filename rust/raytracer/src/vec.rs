@@ -231,12 +231,26 @@ impl Vec3 {
 // Color specific utility functions:
 
 impl Vec3 {
+    fn to_rgb(self, samples_per_pixel: u64) -> [u8; 3] {
+        [
+            (256.0 * (self[0] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u8,
+            (256.0 * (self[1] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u8,
+            (256.0 * (self[2] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u8,
+        ]
+    }
+    
     pub fn format_color(self, samples_per_pixel: u64) -> String {
+        let rgb = self.to_rgb(samples_per_pixel);
         format!(
             "{} {} {}",
-            (256.0 * (self[0] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u64,
-            (256.0 * (self[1] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u64,
-            (256.0 * (self[2] / samples_per_pixel as f64).sqrt().clamp(0.0, 0.999)) as u64,
+            rgb[0],
+            rgb[1],
+            rgb[2],
         )
+    }
+    // TODO: Name this much better:
+    pub fn for_winit(self, samples_per_pixel: u64) -> [u8; 4] {
+        let rgb = self.to_rgb(samples_per_pixel);
+        [rgb[0], rgb[1], rgb[2], 0xff]
     }
 }
