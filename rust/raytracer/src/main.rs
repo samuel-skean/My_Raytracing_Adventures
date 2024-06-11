@@ -258,12 +258,13 @@ fn main() -> io::Result<()> {
                 thread::sleep(Duration::from_millis(200));
     
                 let mut rng = ChaCha12Rng::seed_from_u64(config.random_seed);
-                for j in starting_height..ending_height {
-                    eprint!("\r{}{:4}", offset_ansi_code, j + 1 - starting_height);
-                    stderr().flush().unwrap();
+                for s in 0..config.samples_per_pixel {
+                    eprint!("\r{}{:4}", offset_ansi_code, config.samples_per_pixel - s);
+                    for j in starting_height..ending_height {
+                        stderr().flush().unwrap();
 
-                    for i in 0usize..res.width {
-                        for _ in 0..config.samples_per_pixel {
+                        for i in 0usize..res.width {
+                            
                             let random_u_component: f64 = rng.gen();
                             let random_v_component: f64 = rng.gen();
 
@@ -271,7 +272,7 @@ fn main() -> io::Result<()> {
                                 ((i as f64) + random_u_component) / ((res.width - 1) as f64);
                             let v =
                                 (((res.height - j) as f64) + random_v_component) / ((res.height - 1) as f64);
-    
+
                             let r = cam.get_ray(u, v);
                             let old_pixel_info = image[j][i].load(atomic::Ordering::Acquire);
                             let accumulated_color = old_pixel_info.accumulated_color + ray_color(&r, &world, config.max_depth, &mut rng);
