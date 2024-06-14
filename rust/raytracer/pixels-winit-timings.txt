@@ -1,3 +1,6 @@
+These are recordings of running crazy-scene_world.json.
 Initial Timing, Pre-optimization:
 ./target/debug/skean-raytracer -c configs/background_config.json -o    3213.22s user 24.50s system 602% cpu 8:57.82 total
 
+Timing after introducing delay on the main, drawing thread:
+./target/debug/skean-raytracer -c configs/background_config.json -o    3376.95s user 12.90s system 589% cpu 9:35.16 total

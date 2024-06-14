@@ -54,6 +54,7 @@ impl<'a> ApplicationHandler for App<'a> {
             },
             WindowEvent::RedrawRequested => {
                 render(&self.image, &mut self.pixels.as_mut().unwrap());
+                std::thread::sleep(std::time::Duration::from_secs(1) / 5);
             },
             WindowEvent::Resized(size) => {
                 self.pixels.as_mut().unwrap().resize_surface(size.width, size.height).unwrap();
